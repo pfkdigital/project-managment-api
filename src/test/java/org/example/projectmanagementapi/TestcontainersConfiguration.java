@@ -1,4 +1,4 @@
-package org.example.projectmanagmentapi;
+package org.example.projectmanagementapi;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
