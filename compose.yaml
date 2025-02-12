@@ -2,12 +2,25 @@ services:
   postgres:
     image: 'postgres:latest'
     environment:
-      - 'POSTGRES_DB=mydatabase'
-      - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=myuser'
+      - POSTGRES_DB=pfktasks
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_USER=pfkuser
     ports:
-      - '5432'
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
   redis:
     image: 'redis:latest'
     ports:
-      - '6379'
+      - '6379:6379'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    networks:
+      - backend
+networks:
+  backend:
+volumes:
+  postgres_data:
