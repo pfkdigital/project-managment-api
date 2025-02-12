@@ -19,6 +19,7 @@ This is a **Project Management System** built using **Spring Boot** and **Postgr
 ```
 pfk-project-management/
 │── src/main/java/com/pfk/projectmanagement/
+│   ├── audit/              # Configuration for Audit Aware
 │   ├── config/             # Configuration files (Security, CORS, DB, etc.)
 │   ├── controller/         # REST API controllers
 │   ├── dto/                # Data Transfer Objects (DTOs)
@@ -109,7 +110,7 @@ docker run -p 8080:8080 pfk-project-management
 This project is licensed under the MIT License.
 
 ## 👨‍💻 Contributors
-- **[Nuh Ali]** - Developer
+- **Nuh Ali** - Developer
 
 ## 📧 Contact
 For support or inquiries, email: **noah@pfkdigital.co.uk**
