@@ -15,6 +15,10 @@ This is a **Project Management System** built using **Spring Boot** and **Postgr
 - **Security** (Spring Security, HTTPS, CSRF protection)
 - **Deployment** (Dockerized, AWS ECS, RDS, Load Balancer, VPC)
 
+## 📊 Database Schema
+
+![Database Schema](./img.png)
+
 ## 🏗️ Project Structure
 ```
 pfk-project-management/
