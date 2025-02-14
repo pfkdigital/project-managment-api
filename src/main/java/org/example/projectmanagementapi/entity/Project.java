@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.example.projectmanagementapi.enums.ProjectStatus;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity(name = "project")
@@ -44,4 +45,34 @@ public class Project {
     )
     @ToString.Exclude
     private List<User> users;
+
+    @OneToMany(mappedBy = "project", fetch = FetchType.EAGER)
+    private List<Task> tasks;
+
+
+    @OneToMany(mappedBy = "project", fetch = FetchType.EAGER)
+    private List<Issue> issues;
+
+    public void addUser(User user) {
+        if (users == null) {
+            users = new ArrayList<>();
+        }
+        users.add(user);
+    }
+
+    public void addTask(Task task) {
+        if (tasks == null) {
+            tasks = new ArrayList<>();
+        }
+        tasks.add(task);
+        task.setProject(this);
+    }
+
+    public void addIssue(Issue issue) {
+        if (issues == null) {
+            issues = new ArrayList<>();
+        }
+        issues.add(issue);
+        issue.setProject(this);
+    }
 }

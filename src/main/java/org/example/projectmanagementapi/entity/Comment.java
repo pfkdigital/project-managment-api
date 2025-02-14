@@ -9,6 +9,7 @@ import java.time.LocalDate;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
@@ -21,9 +22,12 @@ public class Comment {
     @Column(name = "content", nullable = false)
     private String content;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @CreatedDate
     private LocalDate createdAt;
+
+    @Column(name = "updated_at", nullable = true, updatable = true)
+    private LocalDate updatedAt;
 
     @ManyToOne()
     @JoinColumn(name = "task_id", nullable = true)
@@ -32,4 +36,8 @@ public class Comment {
     @ManyToOne()
     @JoinColumn(name = "issue_id", nullable = true)
     private Issue issue;
+
+    @ManyToOne()
+    @JoinColumn(name = "user_id", nullable = false)
+    private User author;
 }

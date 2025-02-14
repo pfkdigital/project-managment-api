@@ -6,6 +6,7 @@ import org.example.projectmanagementapi.enums.PriorityStatus;
 import org.example.projectmanagementapi.enums.TaskStatus;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -13,6 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 @ToString
 public class Task {
     @Id
@@ -33,17 +35,32 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private TaskStatus status;
 
+    @ManyToOne()
+    @JoinColumn(name = "project_id")
+    private Project project;
+
     @ManyToMany()
     @JoinTable(
             name ="task_user",
             joinColumns = @JoinColumn(name = "task_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
+    @ToString.Exclude
     private List<User> users;
 
     @OneToMany(mappedBy = "task")
+    @ToString.Exclude
     private List<Comment> comments;
 
     @OneToMany(mappedBy = "task")
+    @ToString.Exclude
     private List<Attachment> attachments;
+
+    public void addAttachment(Attachment attachment) {
+        if (attachments == null) {
+            attachments = new ArrayList<>();
+        }
+        attachments.add(attachment);
+        attachment.setTask(this);
+    }
 }

@@ -5,11 +5,13 @@ import lombok.*;
 import org.example.projectmanagementapi.enums.IssueStatus;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
@@ -18,6 +20,9 @@ public class Issue {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Integer id;
+
+    @Column(name = "title", nullable = false)
+    private String title;
 
     @Column(name = "description", nullable = false)
     private String description;
@@ -47,4 +52,20 @@ public class Issue {
 
     @OneToMany(mappedBy = "issue")
     private List<Attachment> attachments;
+
+    public void addComment(Comment comment) {
+        if (comments == null) {
+            comments = new ArrayList<>();
+        }
+        comments.add(comment);
+        comment.setIssue(this);
+    }
+
+    public void addAttachment(Attachment attachment) {
+        if (attachments == null) {
+            attachments = new ArrayList<>();
+        }
+        attachments.add(attachment);
+        attachment.setIssue(this);
+    }
 }
