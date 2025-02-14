@@ -46,4 +46,7 @@ public class User {
 
     @OneToMany(mappedBy = "assignedTo")
     private List<Issue> assignedIssues;
+
+    @OneToMany(mappedBy = "author")
+    private List<Comment> comments;
 }

@@ -36,7 +36,14 @@ class ProjectControllerTest {
     @Test
     void createProject_returnsCreatedProject() {
         CreateProjectDto createProjectDto = new CreateProjectDto("Project1", "Description1", new User(), "url1");
-        Project project = new Project(1, "Project1", "Description1", ProjectStatus.ACTIVE, "url1", new User(), null);
+        Project project = Project.builder()
+                .id(1)
+                .name("Project1")
+                .description("Description1")
+                .status(ProjectStatus.ACTIVE)
+                .displayImageUrl("url1")
+                .owner(new User())
+                .build();
 
         when(projectService.createProject(createProjectDto)).thenReturn(project);
 
@@ -49,7 +56,14 @@ class ProjectControllerTest {
 
     @Test
     void getProjectById_returnsProject() {
-        Project project = new Project(1, "Project1", "Description1", ProjectStatus.ACTIVE, "url1", new User(), null);
+        Project project = Project.builder()
+                .id(1)
+                .name("Project1")
+                .description("Description1")
+                .status(ProjectStatus.ACTIVE)
+                .displayImageUrl("url1")
+                .owner(new User())
+                .build();
 
         when(projectService.getProjectById(1)).thenReturn(project);
 
@@ -62,7 +76,10 @@ class ProjectControllerTest {
 
     @Test
     void getAllProjects_returnsAllProjects() {
-        List<Project> projects = Arrays.asList(new Project(), new Project());
+        List<Project> projects = Arrays.asList(
+                Project.builder().id(1).name("Project1").build(),
+                Project.builder().id(2).name("Project2").build()
+        );
 
         when(projectService.getAllProjects()).thenReturn(projects);
 
@@ -76,7 +93,14 @@ class ProjectControllerTest {
     @Test
     void updateProject_returnsUpdatedProject() {
         UpdateProjectDto updateProjectDto = new UpdateProjectDto("UpdatedName", "UpdatedDescription", ProjectStatus.COMPLETED, "updatedUrl");
-        Project project = new Project(1, "Project1", "Description1", ProjectStatus.ACTIVE, "url1", new User(), null);
+        Project project = Project.builder()
+                .id(1)
+                .name("Project1")
+                .description("Description1")
+                .status(ProjectStatus.ACTIVE)
+                .displayImageUrl("url1")
+                .owner(new User())
+                .build();
 
         when(projectService.updateProject(1, updateProjectDto)).thenReturn(project);
 

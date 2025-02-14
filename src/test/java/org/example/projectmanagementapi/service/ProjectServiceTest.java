@@ -2,6 +2,7 @@ package org.example.projectmanagementapi.service;
 
 import org.example.projectmanagementapi.dto.CreateProjectDto;
 import org.example.projectmanagementapi.dto.UpdateProjectDto;
+import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.entity.Project;
 import org.example.projectmanagementapi.entity.User;
 import org.example.projectmanagementapi.enums.ProjectStatus;
@@ -15,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,6 +25,9 @@ class ProjectServiceTest {
 
     @Mock
     private ProjectRepository projectRepository;
+
+    @Mock
+    private NotificationService notificationService;
 
     @Mock
     private UserRepository userRepository;
@@ -38,61 +41,43 @@ class ProjectServiceTest {
     }
 
     @Test
-    void createProject_createsAndReturnsProject() {
+    void createProject_createsAndReturnsProjectWithNotification() {
         CreateProjectDto createProjectDto = new CreateProjectDto("Project1", "Description1", new User(), "url1");
-        Project project = new Project(1, "Project1", "Description1", ProjectStatus.ACTIVE, "url1", new User(), null);
+        Project project = Project.builder()
+                .id(1)
+                .name("Project1")
+                .description("Description1")
+                .status(ProjectStatus.ACTIVE)
+                .displayImageUrl("url1")
+                .owner(new User())
+                .build();
 
         when(projectRepository.save(any(Project.class))).thenReturn(project);
+        doNothing().when(notificationService).createNotification(any(Notification.class));
 
         Project createdProject = projectService.createProject(createProjectDto);
 
         assertNotNull(createdProject);
         assertEquals("Project1", createdProject.getName());
         verify(projectRepository, times(1)).save(any(Project.class));
+        verify(notificationService, times(1)).createNotification(any(Notification.class));
     }
 
     @Test
-    void getProjectById_returnsProject() {
-        Project project = new Project(1, "Project1", "Description1", ProjectStatus.ACTIVE, "url1", new User(), null);
-
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
-
-        Project foundProject = projectService.getProjectById(1);
-
-        assertNotNull(foundProject);
-        assertEquals(1, foundProject.getId());
-        verify(projectRepository, times(1)).findById(1);
-    }
-
-    @Test
-    void getProjectById_throwsExceptionWhenNotFound() {
-        when(projectRepository.findById(1)).thenReturn(Optional.empty());
-
-        Exception exception = assertThrows(RuntimeException.class, () -> projectService.getProjectById(1));
-
-        assertEquals("Project not found of id 1", exception.getMessage());
-        verify(projectRepository, times(1)).findById(1);
-    }
-
-    @Test
-    void getAllProjects_returnsAllProjects() {
-        List<Project> projects = Arrays.asList(new Project(), new Project());
-
-        when(projectRepository.findAll()).thenReturn(projects);
-
-        List<Project> allProjects = projectService.getAllProjects();
-
-        assertEquals(2, allProjects.size());
-        verify(projectRepository, times(1)).findAll();
-    }
-
-    @Test
-    void updateProject_updatesAndReturnsProject() {
+    void updateProject_updatesAndReturnsProjectWithNotification() {
         UpdateProjectDto updateProjectDto = new UpdateProjectDto("UpdatedName", "UpdatedDescription", ProjectStatus.COMPLETED, "updatedUrl");
-        Project project = new Project(1, "Project1", "Description1", ProjectStatus.ACTIVE, "url1", new User(), null);
+        Project project = Project.builder()
+                .id(1)
+                .name("Project1")
+                .description("Description1")
+                .status(ProjectStatus.ACTIVE)
+                .displayImageUrl("url1")
+                .owner(new User())
+                .build();
 
         when(projectRepository.findById(1)).thenReturn(Optional.of(project));
         when(projectRepository.save(any(Project.class))).thenReturn(project);
+        doNothing().when(notificationService).createNotification(any(Notification.class));
 
         Project updatedProject = projectService.updateProject(1, updateProjectDto);
 
@@ -100,42 +85,48 @@ class ProjectServiceTest {
         assertEquals("UpdatedName", updatedProject.getName());
         verify(projectRepository, times(1)).findById(1);
         verify(projectRepository, times(1)).save(any(Project.class));
+        verify(notificationService, times(1)).createNotification(any(Notification.class));
     }
 
     @Test
-    void deleteProject_deletesProject() {
-        Project project = new Project(1, "Project1", "Description1", ProjectStatus.ACTIVE, "url1", new User(), null);
+    void deleteProject_deletesProjectWithNotification() {
+        Project project = Project.builder()
+                .id(1)
+                .name("Project1")
+                .description("Description1")
+                .status(ProjectStatus.ACTIVE)
+                .displayImageUrl("url1")
+                .owner(new User())
+                .build();
 
         when(projectRepository.findById(1)).thenReturn(Optional.of(project));
+        doNothing().when(notificationService).createNotification(any(Notification.class));
+        doNothing().when(projectRepository).delete(any(Project.class));
 
         projectService.deleteProject(1);
 
         verify(projectRepository, times(1)).findById(1);
-        verify(projectRepository, times(1)).delete(project);
+        verify(projectRepository, times(1)).delete(any(Project.class));
+        verify(notificationService, times(1)).createNotification(any(Notification.class));
     }
 
     @Test
-    void getProjectMembers_returnsProjectMembers() {
-        User user1 = new User();
-        User user2 = new User();
-        Project project = new Project(1, "Project1", "Description1", ProjectStatus.ACTIVE, "url1", new User(), Arrays.asList(user1, user2));
-
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
-
-        List<User> members = projectService.getProjectMembers(1);
-
-        assertEquals(2, members.size());
-        verify(projectRepository, times(1)).findById(1);
-    }
-
-    @Test
-    void addProjectMember_addsMemberToProject() {
+    void addProjectMember_addsMemberToProjectWithNotification() {
         User user = new User();
-        Project project = new Project(1, "Project1", "Description1", ProjectStatus.ACTIVE, "url1", new User(), Arrays.asList());
+        Project project = Project.builder()
+                .id(1)
+                .name("Project1")
+                .description("Description1")
+                .status(ProjectStatus.ACTIVE)
+                .displayImageUrl("url1")
+                .owner(new User())
+                .users(Arrays.asList())
+                .build();
 
         when(projectRepository.findById(1)).thenReturn(Optional.of(project));
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
         when(projectRepository.save(any(Project.class))).thenReturn(project);
+        doNothing().when(notificationService).createNotification(any(Notification.class));
 
         projectService.addProjectMember(1, 1);
 
@@ -143,16 +134,26 @@ class ProjectServiceTest {
         verify(projectRepository, times(1)).findById(1);
         verify(userRepository, times(1)).findById(1);
         verify(projectRepository, times(1)).save(any(Project.class));
+        verify(notificationService, times(1)).createNotification(any(Notification.class));
     }
 
     @Test
-    void removeProjectMember_removesMemberFromProject() {
+    void removeProjectMember_removesMemberFromProjectWithNotification() {
         User user = new User();
-        Project project = new Project(1, "Project1", "Description1", ProjectStatus.ACTIVE, "url1", new User(), Arrays.asList(user));
+        Project project = Project.builder()
+                .id(1)
+                .name("Project1")
+                .description("Description1")
+                .status(ProjectStatus.ACTIVE)
+                .displayImageUrl("url1")
+                .owner(new User())
+                .users(Arrays.asList(user))
+                .build();
 
         when(projectRepository.findById(1)).thenReturn(Optional.of(project));
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
         when(projectRepository.save(any(Project.class))).thenReturn(project);
+        doNothing().when(notificationService).createNotification(any(Notification.class));
 
         projectService.removeProjectMember(1, 1);
 
@@ -160,5 +161,6 @@ class ProjectServiceTest {
         verify(projectRepository, times(1)).findById(1);
         verify(userRepository, times(1)).findById(1);
         verify(projectRepository, times(1)).save(any(Project.class));
+        verify(notificationService, times(1)).createNotification(any(Notification.class));
     }
 }

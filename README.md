@@ -17,7 +17,7 @@ This is a **Project Management System** built using **Spring Boot** and **Postgr
 
 ## 📊 Database Schema
 
-![Database Schema](./img.png)
+![Database Schema](./diagram-export-12-02-2025-15_01_19.png)
 
 ## 🏗️ Project Structure
 ```
