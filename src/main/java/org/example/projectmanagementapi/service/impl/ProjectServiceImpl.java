@@ -36,7 +36,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         Project savedProject = projectRepository.save(newProject);
 
-        createNotification("Project " + savedProject.getName() + " has been created", NotificationType.CREATION);
+        notificationService.createNotification("Project " + savedProject.getName() + " has been created", NotificationType.CREATION);
 
         return savedProject;
     }
@@ -65,7 +65,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         Project updatedProject = projectRepository.save(selectedProject);
 
-        createNotification("Project " + updatedProject.getName() + " has been updated", NotificationType.UPDATE);
+        notificationService.createNotification("Project " + updatedProject.getName() + " has been updated", NotificationType.UPDATE);
 
         return updatedProject;
     }
@@ -74,7 +74,7 @@ public class ProjectServiceImpl implements ProjectService {
     public void deleteProject(Integer projectId) {
         Project selectedProject = findProjectById(projectId);
 
-        createNotification("Project " + selectedProject.getName() + " has been deleted", NotificationType.DESTRUCTION);
+        notificationService.createNotification("Project " + selectedProject.getName() + " has been deleted", NotificationType.DESTRUCTION);
 
         projectRepository.delete(selectedProject);
     }
@@ -93,7 +93,7 @@ public class ProjectServiceImpl implements ProjectService {
         selectedProject.addUser(selectedUser);
         projectRepository.save(selectedProject);
 
-        createNotification("User " + selectedUser.getUsername() + " has been added to project " + selectedProject.getName(), NotificationType.CREATION);
+        notificationService.createNotification("User " + selectedUser.getUsername() + " has been added to project " + selectedProject.getName(), NotificationType.CREATION);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class ProjectServiceImpl implements ProjectService {
         selectedProject.removeUser(selectedUser);
         projectRepository.save(selectedProject);
 
-        createNotification("User " + selectedUser.getUsername() + " has been removed from project " + selectedProject.getName(), NotificationType.DESTRUCTION);
+        notificationService.createNotification("User " + selectedUser.getUsername() + " has been removed from project " + selectedProject.getName(), NotificationType.DESTRUCTION);
     }
 
     private Project findProjectById(Integer projectId) {
@@ -115,14 +115,5 @@ public class ProjectServiceImpl implements ProjectService {
     private User findUserById(Integer userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found of id " + userId));
-    }
-
-    private void createNotification(String message, NotificationType type) {
-        Notification notification = Notification.builder()
-                .message(message)
-                .type(type)
-                .isRead(false)
-                .build();
-        notificationService.createNotification(notification);
     }
 }

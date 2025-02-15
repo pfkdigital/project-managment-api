@@ -45,7 +45,7 @@ public class IssueServiceImpl implements IssueService {
 
         Issue savedIssue = issueRepository.save(newIssue);
 
-        createNotification("Issue " + savedIssue.getId() + " has been created", NotificationType.CREATION);
+        notificationService.createNotification("Issue " + savedIssue.getId() + " has been created", NotificationType.CREATION);
 
         return savedIssue;
     }
@@ -73,7 +73,7 @@ public class IssueServiceImpl implements IssueService {
 
         Issue updatedIssue = issueRepository.save(selectedIssue);
 
-        createNotification("Issue " + updatedIssue.getId() + " has been updated", NotificationType.UPDATE);
+        notificationService.createNotification("Issue " + updatedIssue.getId() + " has been updated", NotificationType.UPDATE);
 
         return updatedIssue;
     }
@@ -82,7 +82,7 @@ public class IssueServiceImpl implements IssueService {
     public void deleteIssue(Integer issueId) {
         Issue selectedIssue = findIssueById(issueId);
 
-        createNotification("Issue " + selectedIssue.getId() + " has been deleted", NotificationType.DESTRUCTION);
+        notificationService.createNotification("Issue " + selectedIssue.getId() + " has been deleted", NotificationType.DESTRUCTION);
 
         issueRepository.delete(selectedIssue);
     }
@@ -100,14 +100,5 @@ public class IssueServiceImpl implements IssueService {
     private Issue findIssueById(Integer issueId) {
         return issueRepository.findById(issueId)
                 .orElseThrow(() -> new RuntimeException("Issue with id " + issueId + " not found"));
-    }
-
-    private void createNotification(String message, NotificationType type) {
-        Notification notification = Notification.builder()
-                .message(message)
-                .type(type)
-                .isRead(false)
-                .build();
-        notificationService.createNotification(notification);
     }
 }
