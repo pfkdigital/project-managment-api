@@ -40,21 +40,18 @@ public class CommentServiceImpl implements CommentService {
                 .build();
 
         author.addComment(newComment);
-        userRepository.save(author);
 
         if (issue != null) {
             issue.addComment(newComment);
-            issueRepository.save(issue);
         }
 
         if (task != null) {
             task.addComment(newComment);
-            taskRepository.save(task);
         }
 
         Comment savedComment = commentRepository.save(newComment);
 
-        createNotification("Comment " + savedComment.getId() + " has been created", NotificationType.CREATION);
+        notificationService.createNotification("Comment " + savedComment.getId() + " has been created", NotificationType.CREATION);
 
         return savedComment;
     }
@@ -75,7 +72,7 @@ public class CommentServiceImpl implements CommentService {
         existingComment.setContent(comment.getContent());
         existingComment.setUpdatedAt(LocalDate.now());
 
-        createNotification("Comment " + existingComment.getId() + " has been updated", NotificationType.UPDATE);
+        notificationService.createNotification("Comment " + existingComment.getId() + " has been updated", NotificationType.UPDATE);
 
         return commentRepository.save(existingComment);
     }
@@ -85,7 +82,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = findCommentById(commentId);
         commentRepository.delete(comment);
 
-        createNotification("Comment " + commentId + " has been deleted", NotificationType.DESTRUCTION);
+        notificationService.createNotification("Comment " + commentId + " has been deleted", NotificationType.DESTRUCTION);
     }
 
     private User findUserById(Integer userId) {
@@ -106,14 +103,5 @@ public class CommentServiceImpl implements CommentService {
     private Task findTaskById(Integer taskId) {
         return taskRepository.findById(taskId)
                 .orElse(null);
-    }
-
-    private void createNotification(String message, NotificationType type) {
-        Notification notification = Notification.builder()
-                .message(message)
-                .type(type)
-                .isRead(false)
-                .build();
-        notificationService.createNotification(notification);
     }
 }

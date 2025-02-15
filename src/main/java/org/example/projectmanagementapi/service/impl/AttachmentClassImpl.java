@@ -53,17 +53,11 @@ public class AttachmentClassImpl implements AttachmentService {
         try {
             s3Client.deleteObject(bucketName, attachment.getFilePath());
             attachmentRepository.delete(attachment);
-        } catch (SdkClientException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
-        Notification notification = Notification.builder()
-                .message("Attachment " + attachmentId + " has been deleted")
-                .type(NotificationType.DESTRUCTION)
-                .createdAt(LocalDate.now())
-                .build();
-
-        notificationService.createNotification(notification);
+        notificationService.createNotification("Attachment " + attachmentId + " has been deleted", NotificationType.DESTRUCTION);
     }
 
     private Attachment createAttachment(MultipartFile file, Integer id, boolean isTask) {
@@ -92,12 +86,7 @@ public class AttachmentClassImpl implements AttachmentService {
 
         uploadFileToS3(file, id, isTask, attachment);
 
-        Notification notification = Notification.builder()
-                .message("Attachment " + attachment.getId() + " has been created")
-                .type(NotificationType.UPDATE)
-                .createdAt(LocalDate.now())
-                .build();
-        notificationService.createNotification(notification);
+        notificationService.createNotification("Attachment " + attachment.getId() + " has been created", NotificationType.UPDATE);
 
         return attachmentRepository.save(attachment);
     }

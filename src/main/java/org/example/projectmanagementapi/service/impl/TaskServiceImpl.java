@@ -35,7 +35,6 @@ public class TaskServiceImpl implements TaskService {
                 .build();
 
         project.addTask(task);
-        projectRepository.save(project);
 
         Task newTask = taskRepository.save(task);
 

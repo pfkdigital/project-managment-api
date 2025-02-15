@@ -44,7 +44,7 @@ public class Project {
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     @ToString.Exclude
-    private List<User> users = new ArrayList<>();
+    private List<User> users;
 
     @OneToMany(mappedBy = "project", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<Task> tasks;
