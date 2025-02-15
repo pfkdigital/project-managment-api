@@ -3,18 +3,18 @@ package org.example.projectmanagementapi.dto;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.example.projectmanagementapi.enums.IssueStatus;
 import org.example.projectmanagementapi.enums.PriorityStatus;
+
+import java.io.Serializable;
 
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class IssueDto {
+@EqualsAndHashCode
+public class IssueDto implements Serializable {
     @NotNull(message = "Issue must have a title")
     private String title;
     @NotNull(message = "Issue must have a description")

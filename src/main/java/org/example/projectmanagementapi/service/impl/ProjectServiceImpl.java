@@ -1,8 +1,7 @@
 package org.example.projectmanagementapi.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.CreateProjectDto;
-import org.example.projectmanagementapi.dto.UpdateProjectDto;
+import org.example.projectmanagementapi.dto.ProjectDto;
 import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.entity.Project;
 import org.example.projectmanagementapi.entity.User;
@@ -25,14 +24,16 @@ public class ProjectServiceImpl implements ProjectService {
     private final UserRepository userRepository;
 
     @Override
-    public Project createProject(CreateProjectDto createProjectDto) {
+    public Project createProject(ProjectDto projectDto) {
+        User owner = findUserById(projectDto.getOwnerId());
         Project newProject = Project.builder()
-                .name(createProjectDto.name())
-                .description(createProjectDto.description())
-                .displayImageUrl(createProjectDto.displayImageUrl())
+                .name(projectDto.getName())
+                .description(projectDto.getDescription())
+                .displayImageUrl(projectDto.getDisplayImageUrl())
                 .status(ProjectStatus.ACTIVE)
-                .owner(createProjectDto.owner())
                 .build();
+        owner.addProject(newProject);
+
         Project savedProject = projectRepository.save(newProject);
 
         createNotification("Project " + savedProject.getName() + " has been created", NotificationType.CREATION);
@@ -51,12 +52,16 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public Project updateProject(Integer projectId, UpdateProjectDto updateProjectDto) {
+    public Project updateProject(Integer projectId, ProjectDto projectDto) {
+
+        User owner = findUserById(projectDto.getOwnerId());
+
         Project selectedProject = findProjectById(projectId);
-        selectedProject.setName(updateProjectDto.name());
-        selectedProject.setDescription(updateProjectDto.description());
-        selectedProject.setDisplayImageUrl(updateProjectDto.displayImageUrl());
-        selectedProject.setStatus(updateProjectDto.status());
+        selectedProject.setName(projectDto.getName());
+        selectedProject.setDescription(projectDto.getDescription());
+        selectedProject.setDisplayImageUrl(projectDto.getDisplayImageUrl());
+        selectedProject.setStatus(projectDto.getStatus());
+        owner.addProject(selectedProject);
 
         Project updatedProject = projectRepository.save(selectedProject);
 
@@ -85,10 +90,10 @@ public class ProjectServiceImpl implements ProjectService {
         Project selectedProject = findProjectById(projectId);
         User selectedUser = findUserById(userId);
 
-        createNotification("User " + selectedUser.getUsername() + " has been added to project " + selectedProject.getName(), NotificationType.CREATION);
-
-        selectedProject.getUsers().add(selectedUser);
+        selectedProject.addUser(selectedUser);
         projectRepository.save(selectedProject);
+
+        createNotification("User " + selectedUser.getUsername() + " has been added to project " + selectedProject.getName(), NotificationType.CREATION);
     }
 
     @Override
@@ -96,7 +101,7 @@ public class ProjectServiceImpl implements ProjectService {
         Project selectedProject = findProjectById(projectId);
         User selectedUser = findUserById(userId);
 
-        selectedProject.getUsers().remove(selectedUser);
+        selectedProject.removeUser(selectedUser);
         projectRepository.save(selectedProject);
 
         createNotification("User " + selectedUser.getUsername() + " has been removed from project " + selectedProject.getName(), NotificationType.DESTRUCTION);

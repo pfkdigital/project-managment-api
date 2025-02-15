@@ -5,12 +5,10 @@ import org.example.projectmanagementapi.dto.UserDto;
 import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.entity.Project;
 import org.example.projectmanagementapi.entity.Task;
-import org.example.projectmanagementapi.enums.NotificationType;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 import org.example.projectmanagementapi.enums.TaskStatus;
 import org.example.projectmanagementapi.repository.ProjectRepository;
 import org.example.projectmanagementapi.repository.TaskRepository;
-import org.example.projectmanagementapi.service.NotificationService;
 import org.example.projectmanagementapi.service.impl.TaskServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,7 +51,6 @@ class TaskServiceTest {
 
         when(projectRepository.findById(1)).thenReturn(Optional.of(project));
         when(taskRepository.save(any(Task.class))).thenReturn(task);
-        doNothing().when(notificationService).createNotification(any(Notification.class));
 
         Task createdTask = taskService.createTask(taskDto);
 
@@ -83,7 +80,6 @@ class TaskServiceTest {
 
         when(taskRepository.findById(1)).thenReturn(Optional.of(task));
         when(taskRepository.save(any(Task.class))).thenReturn(task);
-        doNothing().when(notificationService).createNotification(any(Notification.class));
 
         Task updatedTask = taskService.updateTask(1, taskDto);
 
@@ -111,8 +107,6 @@ class TaskServiceTest {
         Task task = Task.builder().id(1).description("Description").build();
 
         when(taskRepository.findById(1)).thenReturn(Optional.of(task));
-        doNothing().when(notificationService).createNotification(any(Notification.class));
-        doNothing().when(taskRepository).delete(any(Task.class));
 
         taskService.deleteTask(1);
 

@@ -5,8 +5,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Value;
-import org.example.projectmanagementapi.entity.Task;
+import lombok.*;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 import org.example.projectmanagementapi.enums.TaskStatus;
 
@@ -14,10 +13,10 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * DTO for {@link Task}
- */
-@Value
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
 public class TaskDto implements Serializable {
     @NotNull(message = "Task must have a description")
     String description;

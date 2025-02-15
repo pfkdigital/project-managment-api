@@ -39,7 +39,7 @@ public class Issue {
     @JoinColumn(name = "project_id")
     private Project project;
 
-    @OneToOne()
+    @ManyToOne()
     @JoinColumn(name = "reported_by_id")
     private User reportedBy;
 

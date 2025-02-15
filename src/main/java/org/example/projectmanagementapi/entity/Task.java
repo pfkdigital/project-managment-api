@@ -63,4 +63,12 @@ public class Task {
         attachments.add(attachment);
         attachment.setTask(this);
     }
+
+    public void addComment(Comment comment) {
+        if (comments == null) {
+            comments = new ArrayList<>();
+        }
+        comments.add(comment);
+        comment.setTask(this);
+    }
 }

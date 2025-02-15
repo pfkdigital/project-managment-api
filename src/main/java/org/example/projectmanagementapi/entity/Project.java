@@ -33,7 +33,7 @@ public class Project {
     @Column(name = "display_image_url", nullable = false)
     private String displayImageUrl;
 
-    @ManyToOne()
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "owner_id")
     private User owner;
 
@@ -44,13 +44,13 @@ public class Project {
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     @ToString.Exclude
-    private List<User> users;
+    private List<User> users = new ArrayList<>();
 
-    @OneToMany(mappedBy = "project", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "project", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<Task> tasks;
 
 
-    @OneToMany(mappedBy = "project", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "project", fetch = FetchType.EAGER,cascade = CascadeType.ALL)
     private List<Issue> issues;
 
     public void addUser(User user) {
@@ -58,6 +58,14 @@ public class Project {
             users = new ArrayList<>();
         }
         users.add(user);
+        user.getProjects().add(this);
+    }
+
+    public void removeUser(User user) {
+        if (users != null) {
+            users.remove(user);
+            user.getProjects().remove(this);
+        }
     }
 
     public void addTask(Task task) {

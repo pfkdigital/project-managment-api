@@ -1,8 +1,7 @@
 package org.example.projectmanagementapi.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.CreateProjectDto;
-import org.example.projectmanagementapi.dto.UpdateProjectDto;
+import org.example.projectmanagementapi.dto.ProjectDto;
 import org.example.projectmanagementapi.service.impl.ProjectServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +14,8 @@ public class ProjectController {
     private final ProjectServiceImpl projectService;
 
     @PostMapping
-    public ResponseEntity<?> createProject(@RequestBody CreateProjectDto createProjectDto) {
-        return new ResponseEntity<>(projectService.createProject(createProjectDto), HttpStatus.CREATED);
+    public ResponseEntity<?> createProject(@RequestBody ProjectDto projectDto) {
+        return new ResponseEntity<>(projectService.createProject(projectDto), HttpStatus.CREATED);
     }
 
     @GetMapping("/{projectId}")
@@ -30,8 +29,8 @@ public class ProjectController {
     }
 
     @PutMapping("/{projectId}")
-    public ResponseEntity<?> updateProject(@PathVariable Integer projectId, @RequestBody UpdateProjectDto updateProjectDto) {
-        return new ResponseEntity<>(projectService.updateProject(projectId, updateProjectDto), HttpStatus.OK);
+    public ResponseEntity<?> updateProject(@PathVariable Integer projectId, @RequestBody ProjectDto projectDto) {
+        return new ResponseEntity<>(projectService.updateProject(projectId, projectDto), HttpStatus.OK);
     }
 
     @PutMapping("/{projectId}/members/{userId}")
