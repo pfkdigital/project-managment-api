@@ -1,7 +1,7 @@
 package org.example.projectmanagementapi.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.entity.CommentDto;
+import org.example.projectmanagementapi.dto.CommentDto;
 import org.example.projectmanagementapi.service.impl.CommentServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

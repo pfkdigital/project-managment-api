@@ -1,6 +1,7 @@
 package org.example.projectmanagementapi.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.example.projectmanagementapi.dto.CommentDto;
 import org.example.projectmanagementapi.entity.*;
 import org.example.projectmanagementapi.enums.NotificationType;
 import org.example.projectmanagementapi.repository.CommentRepository;
@@ -37,6 +38,20 @@ public class CommentServiceImpl implements CommentService {
                 .issue(issue)
                 .task(task)
                 .build();
+
+        author.addComment(newComment);
+        userRepository.save(author);
+
+        if (issue != null) {
+            issue.addComment(newComment);
+            issueRepository.save(issue);
+        }
+
+        if (task != null) {
+            task.addComment(newComment);
+            taskRepository.save(task);
+        }
+
         Comment savedComment = commentRepository.save(newComment);
 
         createNotification("Comment " + savedComment.getId() + " has been created", NotificationType.CREATION);

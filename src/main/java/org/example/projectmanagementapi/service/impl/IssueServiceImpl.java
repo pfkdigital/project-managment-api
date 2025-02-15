@@ -40,7 +40,9 @@ public class IssueServiceImpl implements IssueService {
                 .build();
 
         project.addIssue(newIssue);
-        projectRepository.save(project);
+        reportedByUser.addReportedIssue(newIssue);
+        assignedToUser.addAssignedIssue(newIssue);
+
         Issue savedIssue = issueRepository.save(newIssue);
 
         createNotification("Issue " + savedIssue.getId() + " has been created", NotificationType.CREATION);
@@ -61,16 +63,13 @@ public class IssueServiceImpl implements IssueService {
     @Override
     public Issue updateIssue(Integer issueId, IssueDto issueDto) {
         Issue selectedIssue = findIssueById(issueId);
-        User reportedByUser = findUserById(issueDto.getReportedById());
         User assignedToUser = findUserById(issueDto.getAssignedToId());
-        Project project = findProjectById(issueDto.getProjectId());
 
         selectedIssue.setTitle(issueDto.getTitle());
         selectedIssue.setDescription(issueDto.getDescription());
         selectedIssue.setStatus(issueDto.getStatus());
-        selectedIssue.setProject(project);
-        selectedIssue.setReportedBy(reportedByUser);
-        selectedIssue.setAssignedTo(assignedToUser);
+        selectedIssue.setPriorityStatus(issueDto.getPriorityStatus());
+        assignedToUser.addAssignedIssue(selectedIssue);
 
         Issue updatedIssue = issueRepository.save(selectedIssue);
 

@@ -35,6 +35,7 @@ public class TaskServiceImpl implements TaskService {
                 .build();
 
         project.addTask(task);
+        projectRepository.save(project);
 
         Task newTask = taskRepository.save(task);
 
@@ -47,6 +48,17 @@ public class TaskServiceImpl implements TaskService {
         notificationService.createNotification(notification);
 
         return newTask;
+    }
+
+    @Override
+    public Task getTask(Integer taskId) {
+        return taskRepository.getTaskByIdWithAttachmentAndComments(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
+    }
+
+    @Override
+    public List<Task> getTasks() {
+        return taskRepository.findAll();
     }
 
     @Override
@@ -85,16 +97,5 @@ public class TaskServiceImpl implements TaskService {
                 .build();
 
         notificationService.createNotification(notification);
-    }
-
-    @Override
-    public Task getTask(Integer taskId) {
-        return taskRepository.getTaskByIdWithAttachmentAndComments(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
-    }
-
-    @Override
-    public List<Task> getTasks() {
-        return taskRepository.findAll();
     }
 }

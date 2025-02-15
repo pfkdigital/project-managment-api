@@ -1,7 +1,7 @@
 package org.example.projectmanagementapi.service;
 
 import org.example.projectmanagementapi.entity.Comment;
-import org.example.projectmanagementapi.entity.CommentDto;
+import org.example.projectmanagementapi.dto.CommentDto;
 
 import java.util.List;
 
