@@ -1,13 +1,14 @@
 package org.example.projectmanagementapi.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.example.projectmanagementapi.config.WebSocketHandler;
 import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.enums.NotificationType;
 import org.example.projectmanagementapi.repository.NotificationRepository;
 import org.example.projectmanagementapi.service.NotificationService;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -15,7 +16,7 @@ import java.util.List;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final SimpMessagingTemplate simpleMessageTemplate;
+    private final WebSocketHandler webSocketHandler;
 
     @Override
     public Notification createNotification(Notification notification) {
@@ -51,9 +52,15 @@ public class NotificationServiceImpl implements NotificationService {
                 .message(message)
                 .type(type)
                 .isRead(false)
+                .createdAt(LocalDate.now())
                 .build();
 
         createNotification(notification);
-        simpleMessageTemplate.convertAndSend("/topic/notifications", notification);
+
+        try {
+            webSocketHandler.sendNotification(notification);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
