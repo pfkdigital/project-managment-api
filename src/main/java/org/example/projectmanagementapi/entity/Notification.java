@@ -4,7 +4,7 @@ package org.example.projectmanagementapi.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.example.projectmanagementapi.enums.NotificationType;
-import org.springframework.data.annotation.CreatedDate;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 
@@ -18,10 +18,11 @@ import java.time.LocalDate;
 @ToString
 public class Notification {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(name = "type", nullable = false, updatable = false)
+    @Enumerated(EnumType.STRING)
     private NotificationType type;
 
     @Column(name = "message", nullable = false)
@@ -31,6 +32,5 @@ public class Notification {
     private Boolean isRead;
 
     @Column(name = "created_at", nullable = false)
-    @CreatedDate
     private LocalDate createdAt;
 }

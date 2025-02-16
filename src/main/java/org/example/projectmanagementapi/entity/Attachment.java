@@ -15,7 +15,7 @@ import java.time.LocalDate;
 public class Attachment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(name = "file_name", nullable = false)

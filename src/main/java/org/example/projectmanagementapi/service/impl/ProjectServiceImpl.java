@@ -31,7 +31,10 @@ public class ProjectServiceImpl implements ProjectService {
                 .description(projectDto.getDescription())
                 .displayImageUrl(projectDto.getDisplayImageUrl())
                 .status(ProjectStatus.ACTIVE)
+                .users(List.of(owner))
                 .build();
+
+        owner.addOwnedProject(newProject);
         owner.addProject(newProject);
 
         Project savedProject = projectRepository.save(newProject);
