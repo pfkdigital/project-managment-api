@@ -14,12 +14,12 @@ public class AttachmentController {
 
     private final AttachmentService attachmentService;
 
-    @PutMapping("/task/{taskId}")
+    @PostMapping("/task/{taskId}")
     public ResponseEntity<?> createAttachmentForTask(@RequestBody MultipartFile file, @PathVariable Integer taskId) {
         return new ResponseEntity<>(attachmentService.createAttachmentForTask(file, taskId), HttpStatus.CREATED);
     }
 
-    @PutMapping("/issue/{issueId}")
+    @PostMapping("/issue/{issueId}")
     public ResponseEntity<?> createAttachmentForIssue(@RequestBody MultipartFile file, @PathVariable Integer issueId) {
         return new ResponseEntity<>(attachmentService.createAttachmentForIssue(file, issueId), HttpStatus.CREATED);
     }

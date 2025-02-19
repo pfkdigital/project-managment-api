@@ -1,16 +1,22 @@
 package org.example.projectmanagementapi.controller;
 
-import org.example.projectmanagementapi.entity.Notification;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.stereotype.Controller;
+import lombok.RequiredArgsConstructor;
+import org.example.projectmanagementapi.service.NotificationService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+@RestController
+@RequestMapping("/api/v1/notifications")
+@RequiredArgsConstructor
 public class NotificationController {
 
-    @MessageMapping("/notify")
-    @SendTo("/topic/notifications")
-    public Notification sendNotification(Notification notification) {
-        return notification;
+    private final NotificationService notificationService;
+
+    @GetMapping
+    public ResponseEntity<?> getNotifications() {
+        return ResponseEntity.ok(notificationService.getAllNotifications());
     }
+
 }
