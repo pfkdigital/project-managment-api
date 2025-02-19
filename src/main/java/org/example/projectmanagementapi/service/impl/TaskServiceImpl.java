@@ -6,6 +6,7 @@ import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.entity.Project;
 import org.example.projectmanagementapi.entity.Task;
 import org.example.projectmanagementapi.enums.NotificationType;
+import org.example.projectmanagementapi.mapper.TaskMapper;
 import org.example.projectmanagementapi.repository.ProjectRepository;
 import org.example.projectmanagementapi.repository.TaskRepository;
 import org.example.projectmanagementapi.service.NotificationService;
@@ -21,6 +22,7 @@ public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
     private final NotificationService notificationService;
+    private final TaskMapper taskMapper = TaskMapper.INSTANCE;
 
 
     @Override

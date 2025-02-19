@@ -1,5 +1,6 @@
 package org.example.projectmanagementapi;
 
+import org.example.projectmanagementapi.config.TestcontainersConfiguration;
 import org.springframework.boot.SpringApplication;
 
 public class TestProjectManagmentApiApplication {

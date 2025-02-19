@@ -1,13 +1,8 @@
 package org.example.projectmanagementapi.service.impl;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.entity.Attachment;
 import org.example.projectmanagementapi.entity.Issue;
-import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.entity.Task;
 import org.example.projectmanagementapi.enums.AcceptedFileType;
 import org.example.projectmanagementapi.enums.NotificationType;
@@ -19,9 +14,15 @@ import org.example.projectmanagementapi.service.NotificationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +35,7 @@ public class AttachmentClassImpl implements AttachmentService {
     private final TaskRepository taskRepository;
     private final IssueRepository issueRepository;
     private final NotificationService notificationService;
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
 
     @Override
     public Attachment createAttachmentForTask(MultipartFile file, Integer taskId) {
@@ -51,7 +52,11 @@ public class AttachmentClassImpl implements AttachmentService {
         Attachment attachment = attachmentRepository.findById(attachmentId).orElseThrow(() -> new RuntimeException("Attachment with id " + attachmentId + " not found"));
 
         try {
-            s3Client.deleteObject(bucketName, attachment.getFilePath());
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key("attachments/" + (attachment.getTask() != null ? "tasks/" : "issues/") + (attachment.getTask() != null ? attachment.getTask().getId() : attachment.getIssue().getId()) + "/" + attachment.getFileName())
+                    .build();
+            s3Client.deleteObject(deleteObjectRequest);
             attachmentRepository.delete(attachment);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -93,16 +98,20 @@ public class AttachmentClassImpl implements AttachmentService {
 
     private void uploadFileToS3(MultipartFile file, Integer id, boolean isTask, Attachment attachment) {
         try {
-            ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentType(file.getContentType());
-            metadata.setContentLength(file.getSize());
+            RequestBody requestBody = RequestBody.fromInputStream(file.getInputStream(), file.getSize());
 
             String keyName = "attachments/" + (isTask ? "tasks/" : "issues/") + id + "/" + file.getOriginalFilename();
 
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, keyName, file.getInputStream(), metadata);
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(keyName)
+                    .contentType(file.getContentType())
+                    .contentLength(file.getSize())
+                    .build();
 
-            s3Client.putObject(putObjectRequest);
-            attachment.setFilePath(s3Client.getUrl(bucketName, keyName).toString());
+            PutObjectResponse response = s3Client.putObject(putObjectRequest,requestBody);
+
+            attachment.setFilePath("https://" + bucketName + ".s3.amazonaws.com/" + keyName);
             attachment.setUploadedAt(LocalDate.now());
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -110,8 +119,9 @@ public class AttachmentClassImpl implements AttachmentService {
     }
 
     private boolean checkIfValidFileType(MultipartFile file) {
+        System.out.println(file.getContentType() + "=>" + file.getOriginalFilename());
         for (AcceptedFileType type : AcceptedFileType.values()) {
-            if (type.getFileType().equals(file.getContentType())) {
+            if (Objects.equals(file.getContentType(), type.getMediaType().toString())) {
                 return true;
             }
         }
