@@ -11,11 +11,12 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    private final WebSocketHandler webSocketHandler;
+  private final WebSocketHandler webSocketHandler;
 
-    @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(webSocketHandler, "/notifications")
-                .setAllowedOrigins("http://localhost:5173");
-    }
+  @Override
+  public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+    registry
+        .addHandler(webSocketHandler, "/notifications")
+        .setAllowedOrigins("http://localhost:5173");
+  }
 }

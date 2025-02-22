@@ -1,13 +1,12 @@
 package org.example.projectmanagementapi.util;
 
+import java.util.Random;
 import org.springframework.stereotype.Component;
 
-import java.util.Random;
-
 @Component
-public class VerificationTokenUtility {
+public class TokenUtility {
 
-  public String generateVerificationToken() {
+  public String generateToken() {
     Random random = new Random();
     char[] token = new char[6];
     for (int i = 0; i < 6; i++) {

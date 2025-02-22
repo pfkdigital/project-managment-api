@@ -7,8 +7,9 @@ import org.mapstruct.factory.Mappers;
 
 @Mapper
 public interface TaskMapper {
-    TaskMapper INSTANCE = Mappers.getMapper(TaskMapper.class);
+  TaskMapper INSTANCE = Mappers.getMapper(TaskMapper.class);
 
-    TaskDto taskToTaskDto(Task task);
-    Task taskDtoToTask(TaskDto taskDto);
+  TaskDto taskToTaskDto(Task task);
+
+  Task taskDtoToTask(TaskDto taskDto);
 }

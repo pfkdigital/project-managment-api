@@ -1,102 +1,109 @@
 package org.example.projectmanagementapi.service.impl;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.TaskDto;
 import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.entity.Project;
 import org.example.projectmanagementapi.entity.Task;
 import org.example.projectmanagementapi.enums.NotificationType;
-import org.example.projectmanagementapi.mapper.TaskMapper;
 import org.example.projectmanagementapi.repository.ProjectRepository;
 import org.example.projectmanagementapi.repository.TaskRepository;
 import org.example.projectmanagementapi.service.NotificationService;
 import org.example.projectmanagementapi.service.TaskService;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
 
-    private final TaskRepository taskRepository;
-    private final ProjectRepository projectRepository;
-    private final NotificationService notificationService;
-    private final TaskMapper taskMapper = TaskMapper.INSTANCE;
+  private final TaskRepository taskRepository;
+  private final ProjectRepository projectRepository;
+  private final NotificationService notificationService;
 
+  @Override
+  public Task createTask(TaskDto taskDto) {
+    Project project =
+        projectRepository
+            .findById(taskDto.getProjectId())
+            .orElseThrow(() -> new IllegalArgumentException("Project not found"));
 
-    @Override
-    public Task createTask(TaskDto taskDto) {
-        Project project = projectRepository.findById(taskDto.getProjectId())
-                .orElseThrow(() -> new IllegalArgumentException("Project not found"));
+    Task task =
+        Task.builder()
+            .description(taskDto.getDescription())
+            .dueDate(taskDto.getDueDate())
+            .priority(taskDto.getPriority())
+            .build();
 
-        Task task = Task.builder()
-                .description(taskDto.getDescription())
-                .dueDate(taskDto.getDueDate())
-                .priority(taskDto.getPriority())
-                .build();
+    project.addTask(task);
 
-        project.addTask(task);
+    Task newTask = taskRepository.save(task);
 
-        Task newTask = taskRepository.save(task);
+    Notification notification =
+        Notification.builder()
+            .message("Task with id" + newTask.getId() + " has been created")
+            .type(NotificationType.CREATION)
+            .isRead(false)
+            .build();
 
-        Notification notification = Notification.builder()
-                .message("Task with id" + newTask.getId() + " has been created")
-                .type(NotificationType.CREATION)
-                .isRead(false)
-                .build();
+    notificationService.createNotification(notification);
 
-        notificationService.createNotification(notification);
+    return newTask;
+  }
 
-        return newTask;
-    }
+  @Override
+  public Task getTask(Integer taskId) {
+    return taskRepository
+        .getTaskByIdWithAttachmentAndComments(taskId)
+        .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
+  }
 
-    @Override
-    public Task getTask(Integer taskId) {
-        return taskRepository.getTaskByIdWithAttachmentAndComments(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
-    }
+  @Override
+  public List<Task> getTasks() {
+    return taskRepository.findAll();
+  }
 
-    @Override
-    public List<Task> getTasks() {
-        return taskRepository.findAll();
-    }
+  @Override
+  public Task updateTask(Integer taskId, TaskDto taskDto) {
+    Task selectedTask =
+        taskRepository
+            .findById(taskId)
+            .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
 
-    @Override
-    public Task updateTask(Integer taskId, TaskDto taskDto) {
-        Task selectedTask = taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
+    selectedTask.setDescription(taskDto.getDescription());
+    selectedTask.setDueDate(taskDto.getDueDate());
+    selectedTask.setPriority(taskDto.getPriority());
+    selectedTask.setStatus(taskDto.getStatus());
 
-        selectedTask.setDescription(taskDto.getDescription());
-        selectedTask.setDueDate(taskDto.getDueDate());
-        selectedTask.setPriority(taskDto.getPriority());
-        selectedTask.setStatus(taskDto.getStatus());
+    Task updatedTask = taskRepository.save(selectedTask);
 
-        Task updatedTask = taskRepository.save(selectedTask);
+    Notification notification =
+        Notification.builder()
+            .message("Task with id " + updatedTask.getId() + " has been updated")
+            .type(NotificationType.UPDATE)
+            .isRead(false)
+            .build();
 
-        Notification notification = Notification.builder()
-                .message("Task with id " + updatedTask.getId() + " has been updated")
-                .type(NotificationType.UPDATE)
-                .isRead(false)
-                .build();
+    notificationService.createNotification(notification);
+    return updatedTask;
+  }
 
-        notificationService.createNotification(notification);
-        return updatedTask;
-    }
+  @Override
+  public void deleteTask(Integer taskId) {
+    Task task =
+        taskRepository
+            .findById(taskId)
+            .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
 
-    @Override
-    public void deleteTask(Integer taskId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
+    taskRepository.delete(task);
 
-        taskRepository.delete(task);
+    Notification notification =
+        Notification.builder()
+            .message("Task with id " + taskId + " has been deleted")
+            .type(NotificationType.DESTRUCTION)
+            .isRead(false)
+            .build();
 
-        Notification notification = Notification.builder()
-                .message("Task with id " + taskId + " has been deleted")
-                .type(NotificationType.DESTRUCTION)
-                .isRead(false)
-                .build();
-
-        notificationService.createNotification(notification);
-    }
+    notificationService.createNotification(notification);
+  }
 }

@@ -1,5 +1,7 @@
 package org.example.projectmanagementapi.service.impl;
 
+import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.config.WebSocketHandler;
 import org.example.projectmanagementapi.entity.Notification;
@@ -8,59 +10,65 @@ import org.example.projectmanagementapi.repository.NotificationRepository;
 import org.example.projectmanagementapi.service.NotificationService;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
-    private final NotificationRepository notificationRepository;
-    private final WebSocketHandler webSocketHandler;
+  private final NotificationRepository notificationRepository;
+  private final WebSocketHandler webSocketHandler;
 
-    @Override
-    public Notification createNotification(Notification notification) {
-        return notificationRepository.save(notification);
+  @Override
+  public Notification createNotification(Notification notification) {
+    return notificationRepository.save(notification);
+  }
+
+  @Override
+  public List<Notification> getAllNotifications() {
+    return notificationRepository.findAll();
+  }
+
+  @Override
+  public Notification getNotificationById(Integer id) {
+    return notificationRepository
+        .findById(id)
+        .orElseThrow(() -> new RuntimeException("Notification with id " + id + " not found"));
+  }
+
+  @Override
+  public void deleteNotificationById(Integer id) {
+    Notification notification =
+        notificationRepository
+            .findById(id)
+            .orElseThrow(() -> new RuntimeException("Notification with id " + id + " not found"));
+    notificationRepository.delete(notification);
+  }
+
+  @Override
+  public Notification updateNotificationStatus(Integer id, Boolean status) {
+    Notification notification =
+        notificationRepository
+            .findById(id)
+            .orElseThrow(() -> new RuntimeException("Notification with id " + id + " not found"));
+    notification.setIsRead(status);
+    return notificationRepository.save(notification);
+  }
+
+  @Override
+  public void createNotification(String message, NotificationType type) {
+    Notification notification =
+        Notification.builder()
+            .message(message)
+            .type(type)
+            .isRead(false)
+            .createdAt(LocalDate.now())
+            .build();
+
+    createNotification(notification);
+
+    try {
+      webSocketHandler.sendNotification(notification);
+    } catch (Exception e) {
+      e.printStackTrace();
     }
-
-    @Override
-    public List<Notification> getAllNotifications() {
-        return notificationRepository.findAll();
-    }
-
-    @Override
-    public Notification getNotificationById(Integer id) {
-        return notificationRepository.findById(id).orElseThrow(() -> new RuntimeException("Notification with id " + id + " not found"));
-    }
-
-    @Override
-    public void deleteNotificationById(Integer id) {
-        Notification notification = notificationRepository.findById(id).orElseThrow(() -> new RuntimeException("Notification with id " + id + " not found"));
-        notificationRepository.delete(notification);
-    }
-
-    @Override
-    public Notification updateNotificationStatus(Integer id, Boolean status) {
-        Notification notification = notificationRepository.findById(id).orElseThrow(() -> new RuntimeException("Notification with id " + id + " not found"));
-        notification.setIsRead(status);
-        return notificationRepository.save(notification);
-    }
-
-    @Override
-    public void createNotification(String message, NotificationType type) {
-        Notification notification = Notification.builder()
-                .message(message)
-                .type(type)
-                .isRead(false)
-                .createdAt(LocalDate.now())
-                .build();
-
-        createNotification(notification);
-
-        try {
-            webSocketHandler.sendNotification(notification);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+  }
 }

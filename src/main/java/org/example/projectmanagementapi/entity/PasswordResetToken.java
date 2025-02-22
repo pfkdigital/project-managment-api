@@ -11,7 +11,7 @@ import lombok.*;
 @Setter
 @Builder
 @ToString
-public class VerificationToken {
+public class PasswordResetToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

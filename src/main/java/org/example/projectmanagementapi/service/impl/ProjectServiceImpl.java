@@ -1,8 +1,8 @@
 package org.example.projectmanagementapi.service.impl;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.ProjectDto;
-import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.entity.Project;
 import org.example.projectmanagementapi.entity.User;
 import org.example.projectmanagementapi.enums.NotificationType;
@@ -13,110 +13,124 @@ import org.example.projectmanagementapi.service.NotificationService;
 import org.example.projectmanagementapi.service.ProjectService;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class ProjectServiceImpl implements ProjectService {
 
-    private final ProjectRepository projectRepository;
-    private final NotificationService notificationService;
-    private final UserRepository userRepository;
+  private final ProjectRepository projectRepository;
+  private final NotificationService notificationService;
+  private final UserRepository userRepository;
 
-    @Override
-    public Project createProject(ProjectDto projectDto) {
-        User owner = findUserById(projectDto.getOwnerId());
-        Project newProject = Project.builder()
-                .name(projectDto.getName())
-                .description(projectDto.getDescription())
-                .displayImageUrl(projectDto.getDisplayImageUrl())
-                .status(ProjectStatus.ACTIVE)
-                .users(List.of(owner))
-                .build();
+  @Override
+  public Project createProject(ProjectDto projectDto) {
+    User owner = findUserById(projectDto.getOwnerId());
+    Project newProject =
+        Project.builder()
+            .name(projectDto.getName())
+            .description(projectDto.getDescription())
+            .displayImageUrl(projectDto.getDisplayImageUrl())
+            .status(ProjectStatus.ACTIVE)
+            .users(List.of(owner))
+            .build();
 
-        owner.addOwnedProject(newProject);
-        owner.addProject(newProject);
+    owner.addOwnedProject(newProject);
+    owner.addProject(newProject);
 
-        Project savedProject = projectRepository.save(newProject);
+    Project savedProject = projectRepository.save(newProject);
 
-        notificationService.createNotification("Project " + savedProject.getName() + " has been created", NotificationType.CREATION);
+    notificationService.createNotification(
+        "Project " + savedProject.getName() + " has been created", NotificationType.CREATION);
 
-        return savedProject;
-    }
+    return savedProject;
+  }
 
-    @Override
-    public Project getProjectById(Integer projectId) {
-        return findProjectById(projectId);
-    }
+  @Override
+  public Project getProjectById(Integer projectId) {
+    return findProjectById(projectId);
+  }
 
-    @Override
-    public List<Project> getAllProjects() {
-        return projectRepository.findAll();
-    }
+  @Override
+  public List<Project> getAllProjects() {
+    return projectRepository.findAll();
+  }
 
-    @Override
-    public Project updateProject(Integer projectId, ProjectDto projectDto) {
+  @Override
+  public Project updateProject(Integer projectId, ProjectDto projectDto) {
 
-        User owner = findUserById(projectDto.getOwnerId());
+    User owner = findUserById(projectDto.getOwnerId());
 
-        Project selectedProject = findProjectById(projectId);
-        selectedProject.setName(projectDto.getName());
-        selectedProject.setDescription(projectDto.getDescription());
-        selectedProject.setDisplayImageUrl(projectDto.getDisplayImageUrl());
-        selectedProject.setStatus(projectDto.getStatus());
-        owner.addProject(selectedProject);
+    Project selectedProject = findProjectById(projectId);
+    selectedProject.setName(projectDto.getName());
+    selectedProject.setDescription(projectDto.getDescription());
+    selectedProject.setDisplayImageUrl(projectDto.getDisplayImageUrl());
+    selectedProject.setStatus(projectDto.getStatus());
+    owner.addProject(selectedProject);
 
-        Project updatedProject = projectRepository.save(selectedProject);
+    Project updatedProject = projectRepository.save(selectedProject);
 
-        notificationService.createNotification("Project " + updatedProject.getName() + " has been updated", NotificationType.UPDATE);
+    notificationService.createNotification(
+        "Project " + updatedProject.getName() + " has been updated", NotificationType.UPDATE);
 
-        return updatedProject;
-    }
+    return updatedProject;
+  }
 
-    @Override
-    public void deleteProject(Integer projectId) {
-        Project selectedProject = findProjectById(projectId);
+  @Override
+  public void deleteProject(Integer projectId) {
+    Project selectedProject = findProjectById(projectId);
 
-        notificationService.createNotification("Project " + selectedProject.getName() + " has been deleted", NotificationType.DESTRUCTION);
+    notificationService.createNotification(
+        "Project " + selectedProject.getName() + " has been deleted", NotificationType.DESTRUCTION);
 
-        projectRepository.delete(selectedProject);
-    }
+    projectRepository.delete(selectedProject);
+  }
 
-    @Override
-    public List<User> getProjectMembers(Integer projectId) {
-        Project selectedProject = findProjectById(projectId);
-        return selectedProject.getUsers();
-    }
+  @Override
+  public List<User> getProjectMembers(Integer projectId) {
+    Project selectedProject = findProjectById(projectId);
+    return selectedProject.getUsers();
+  }
 
-    @Override
-    public void addProjectMember(Integer projectId, Integer userId) {
-        Project selectedProject = findProjectById(projectId);
-        User selectedUser = findUserById(userId);
+  @Override
+  public void addProjectMember(Integer projectId, Integer userId) {
+    Project selectedProject = findProjectById(projectId);
+    User selectedUser = findUserById(userId);
 
-        selectedProject.addUser(selectedUser);
-        projectRepository.save(selectedProject);
+    selectedProject.addUser(selectedUser);
+    projectRepository.save(selectedProject);
 
-        notificationService.createNotification("User " + selectedUser.getUsername() + " has been added to project " + selectedProject.getName(), NotificationType.CREATION);
-    }
+    notificationService.createNotification(
+        "User "
+            + selectedUser.getUsername()
+            + " has been added to project "
+            + selectedProject.getName(),
+        NotificationType.CREATION);
+  }
 
-    @Override
-    public void removeProjectMember(Integer projectId, Integer userId) {
-        Project selectedProject = findProjectById(projectId);
-        User selectedUser = findUserById(userId);
+  @Override
+  public void removeProjectMember(Integer projectId, Integer userId) {
+    Project selectedProject = findProjectById(projectId);
+    User selectedUser = findUserById(userId);
 
-        selectedProject.removeUser(selectedUser);
-        projectRepository.save(selectedProject);
+    selectedProject.removeUser(selectedUser);
+    projectRepository.save(selectedProject);
 
-        notificationService.createNotification("User " + selectedUser.getUsername() + " has been removed from project " + selectedProject.getName(), NotificationType.DESTRUCTION);
-    }
+    notificationService.createNotification(
+        "User "
+            + selectedUser.getUsername()
+            + " has been removed from project "
+            + selectedProject.getName(),
+        NotificationType.DESTRUCTION);
+  }
 
-    private Project findProjectById(Integer projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found of id " + projectId));
-    }
+  private Project findProjectById(Integer projectId) {
+    return projectRepository
+        .findById(projectId)
+        .orElseThrow(() -> new RuntimeException("Project not found of id " + projectId));
+  }
 
-    private User findUserById(Integer userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found of id " + userId));
-    }
+  private User findUserById(Integer userId) {
+    return userRepository
+        .findById(userId)
+        .orElseThrow(() -> new RuntimeException("User not found of id " + userId));
+  }
 }

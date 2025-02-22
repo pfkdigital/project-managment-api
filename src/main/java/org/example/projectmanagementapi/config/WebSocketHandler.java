@@ -15,32 +15,32 @@ import java.util.Set;
 
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
-    private final Set<WebSocketSession> socketSessions = new HashSet<>();
-    private final ObjectMapper objectMapper;
+  private final Set<WebSocketSession> socketSessions = new HashSet<>();
+  private final ObjectMapper objectMapper;
 
-    public WebSocketHandler() {
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule());
-    }
+  public WebSocketHandler() {
+    this.objectMapper = new ObjectMapper();
+    this.objectMapper.registerModule(new JavaTimeModule());
+  }
 
-    @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        socketSessions.add(session);
-        System.out.println("New WebSocket connection: " + session.getId());
-    }
+  @Override
+  public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    socketSessions.add(session);
+    System.out.println("New WebSocket connection: " + session.getId());
+  }
 
-    @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        socketSessions.remove(session);
-        System.out.println("WebSocket closed: " + session.getId());
-    }
+  @Override
+  public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+    socketSessions.remove(session);
+    System.out.println("WebSocket closed: " + session.getId());
+  }
 
-    public void sendNotification(Notification notification) throws IOException {
-        String notificationJson = objectMapper.writeValueAsString(notification);
-        for (WebSocketSession session : socketSessions) {
-            if (session.isOpen()) {
-                session.sendMessage(new TextMessage(notificationJson));
-            }
-        }
+  public void sendNotification(Notification notification) throws IOException {
+    String notificationJson = objectMapper.writeValueAsString(notification);
+    for (WebSocketSession session : socketSessions) {
+      if (session.isOpen()) {
+        session.sendMessage(new TextMessage(notificationJson));
+      }
     }
+  }
 }
