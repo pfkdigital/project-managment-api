@@ -7,12 +7,11 @@ import org.springframework.http.MediaType;
 @Getter
 @AllArgsConstructor
 public enum AcceptedFileType {
+  JPG(MediaType.IMAGE_JPEG),
+  JPEG(MediaType.IMAGE_JPEG),
+  TXT(MediaType.TEXT_PLAIN),
+  PNG(MediaType.IMAGE_PNG),
+  PDF(MediaType.APPLICATION_PDF);
 
-    JPG(MediaType.IMAGE_JPEG),
-    JPEG(MediaType.IMAGE_JPEG),
-    TXT(MediaType.TEXT_PLAIN),
-    PNG(MediaType.IMAGE_PNG),
-    PDF(MediaType.APPLICATION_PDF);
-
-    private final MediaType mediaType;
+  private final MediaType mediaType;
 }

@@ -12,31 +12,30 @@ import software.amazon.awssdk.services.ses.SesClient;
 @Configuration
 public class AwsConfig {
 
-    @Value("${cloud.aws.credentials.accessKey}")
-    private String accessKey;
+  @Value("${cloud.aws.credentials.accessKey}")
+  private String accessKey;
 
-    @Value("${cloud.aws.credentials.secretKey}")
-    private String accessSecret;
+  @Value("${cloud.aws.credentials.secretKey}")
+  private String accessSecret;
 
-    @Value("${cloud.aws.region.static}")
-    private String region;
+  @Value("${cloud.aws.region.static}")
+  private String region;
 
+  @Bean
+  public S3Client s3Client() {
+    AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, accessSecret);
+    return S3Client.builder()
+        .credentialsProvider(StaticCredentialsProvider.create(credentials))
+        .region(Region.of(region))
+        .build();
+  }
 
-    @Bean
-    public S3Client s3Client() {
-        AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, accessSecret);
-        return S3Client.builder()
-                .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .region(Region.of(region))
-                .build();
-    }
-
-    @Bean
-    public SesClient sesClient() {
-        AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, accessSecret);
-        return SesClient.builder()
-                .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .region(Region.of(region))
-                .build();
-    }
+  @Bean
+  public SesClient sesClient() {
+    AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, accessSecret);
+    return SesClient.builder()
+        .credentialsProvider(StaticCredentialsProvider.create(credentials))
+        .region(Region.of(region))
+        .build();
+  }
 }

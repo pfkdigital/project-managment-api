@@ -1,9 +1,9 @@
 package org.example.projectmanagementapi.enums;
 
 public enum NotificationType {
-    DESTRUCTION,
-    CREATION,
-    UPDATE,
-    ASSIGNMENT,
-    COMPLETION
+  DESTRUCTION,
+  CREATION,
+  UPDATE,
+  ASSIGNMENT,
+  COMPLETION
 }
