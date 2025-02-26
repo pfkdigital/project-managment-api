@@ -1,11 +1,15 @@
 package org.example.projectmanagementapi.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.CommentDto;
+import org.example.projectmanagementapi.dto.request.CommentRequestDto;
+import org.example.projectmanagementapi.dto.response.CommentDto;
 import org.example.projectmanagementapi.service.impl.CommentServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/comments")
@@ -15,23 +19,23 @@ public class CommentController {
   private final CommentServiceImpl commentService;
 
   @PostMapping
-  public ResponseEntity<?> createComment(@RequestBody CommentDto comment) {
+  public ResponseEntity<CommentDto> createComment(@Valid @RequestBody CommentRequestDto comment) {
     return new ResponseEntity<>(commentService.createComment(comment), HttpStatus.CREATED);
   }
 
   @GetMapping
-  public ResponseEntity<?> getComments() {
+  public ResponseEntity<List<CommentDto>> getComments() {
     return new ResponseEntity<>(commentService.getComments(), HttpStatus.OK);
   }
 
   @GetMapping("/{commentId}")
-  public ResponseEntity<?> getComment(@PathVariable Integer commentId) {
+  public ResponseEntity<CommentDto> getComment(@PathVariable Integer commentId) {
     return new ResponseEntity<>(commentService.getComment(commentId), HttpStatus.OK);
   }
 
   @PutMapping("/{commentId}")
-  public ResponseEntity<?> updateComment(
-      @PathVariable Integer commentId, @RequestBody CommentDto comment) {
+  public ResponseEntity<CommentDto> updateComment(
+      @PathVariable Integer commentId, @Valid @RequestBody CommentRequestDto comment) {
     return new ResponseEntity<>(commentService.updateComment(commentId, comment), HttpStatus.OK);
   }
 

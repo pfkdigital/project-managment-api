@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.Optional;
-import org.example.projectmanagementapi.dto.CommentDto;
+import org.example.projectmanagementapi.dto.request.CommentRequestDto;
 import org.example.projectmanagementapi.entity.Comment;
 import org.example.projectmanagementapi.entity.Issue;
 import org.example.projectmanagementapi.entity.Task;
@@ -42,8 +42,8 @@ class CommentServiceTest {
 
   @Test
   void createComment_createsAndReturnsComment() {
-    CommentDto commentDto =
-        CommentDto.builder().content("Content").authorId(1).issueId(1).taskId(1).build();
+    CommentRequestDto commentRequestDto =
+        CommentRequestDto.builder().content("Content").authorId(1).issueId(1).taskId(1).build();
     User author = new User();
     Issue issue = new Issue();
     Task task = new Task();
@@ -54,7 +54,7 @@ class CommentServiceTest {
     when(taskRepository.findById(1)).thenReturn(Optional.of(task));
     when(commentRepository.save(any(Comment.class))).thenReturn(comment);
 
-    Comment createdComment = commentService.createComment(commentDto);
+    Comment createdComment = commentService.createComment(commentRequestDto);
 
     assertNotNull(createdComment);
     assertEquals("Content", createdComment.getContent());
@@ -64,12 +64,12 @@ class CommentServiceTest {
 
   @Test
   void createComment_throwsExceptionWhenUserNotFound() {
-    CommentDto commentDto =
-        CommentDto.builder().content("Content").authorId(1).issueId(1).taskId(1).build();
+    CommentRequestDto commentRequestDto =
+        CommentRequestDto.builder().content("Content").authorId(1).issueId(1).taskId(1).build();
 
     when(userRepository.findById(1)).thenReturn(Optional.empty());
 
-    assertThrows(IllegalArgumentException.class, () -> commentService.createComment(commentDto));
+    assertThrows(IllegalArgumentException.class, () -> commentService.createComment(commentRequestDto));
     verify(commentRepository, never()).save(any(Comment.class));
     verify(notificationService, never()).createNotification(any());
   }
@@ -110,13 +110,13 @@ class CommentServiceTest {
 
   @Test
   void updateComment_updatesAndReturnsComment() {
-    CommentDto commentDto = CommentDto.builder().content("UpdatedContent").build();
+    CommentRequestDto commentRequestDto = CommentRequestDto.builder().content("UpdatedContent").build();
     Comment comment = Comment.builder().id(1).content("Content").build();
 
     when(commentRepository.findById(1)).thenReturn(Optional.of(comment));
     when(commentRepository.save(any(Comment.class))).thenReturn(comment);
 
-    Comment updatedComment = commentService.updateComment(1, commentDto);
+    Comment updatedComment = commentService.updateComment(1, commentRequestDto);
 
     assertNotNull(updatedComment);
     assertEquals("UpdatedContent", updatedComment.getContent());
@@ -126,11 +126,11 @@ class CommentServiceTest {
 
   @Test
   void updateComment_throwsExceptionWhenCommentNotFound() {
-    CommentDto commentDto = CommentDto.builder().content("UpdatedContent").build();
+    CommentRequestDto commentRequestDto = CommentRequestDto.builder().content("UpdatedContent").build();
 
     when(commentRepository.findById(1)).thenReturn(Optional.empty());
 
-    assertThrows(IllegalArgumentException.class, () -> commentService.updateComment(1, commentDto));
+    assertThrows(IllegalArgumentException.class, () -> commentService.updateComment(1, commentRequestDto));
     verify(commentRepository, never()).save(any(Comment.class));
     verify(notificationService, never()).createNotification(any());
   }

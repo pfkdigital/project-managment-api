@@ -2,10 +2,10 @@ package org.example.projectmanagementapi.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.ForgotPasswordDto;
-import org.example.projectmanagementapi.dto.LoginDto;
-import org.example.projectmanagementapi.dto.RegisterDto;
-import org.example.projectmanagementapi.dto.ResetPasswordDto;
+import org.example.projectmanagementapi.dto.request.ForgotPasswordDto;
+import org.example.projectmanagementapi.dto.request.LoginRequestDto;
+import org.example.projectmanagementapi.dto.request.RegisterRequestDto;
+import org.example.projectmanagementapi.dto.request.ResetPasswordRequestDto;
 import org.example.projectmanagementapi.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +18,8 @@ public class AuthController {
   private final AuthService authService;
 
   @PostMapping("/register")
-  public ResponseEntity<?> registerUser(@RequestBody RegisterDto registerDto) {
-    authService.registerUser(registerDto);
+  public ResponseEntity<?> registerUser(@RequestBody RegisterRequestDto registerRequestDto) {
+    authService.registerUser(registerRequestDto);
     return new ResponseEntity<>(HttpStatus.CREATED);
   }
 
@@ -30,8 +30,8 @@ public class AuthController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<?> loginUser(@RequestBody LoginDto loginDto, HttpServletResponse response) {
-    return new ResponseEntity<>(authService.loginUser(loginDto, response), HttpStatus.OK);
+  public ResponseEntity<?> loginUser(@RequestBody LoginRequestDto loginRequestDto, HttpServletResponse response) {
+    return new ResponseEntity<>(authService.loginUser(loginRequestDto, response), HttpStatus.OK);
   }
 
   @PostMapping("/forgot-password")
@@ -42,8 +42,8 @@ public class AuthController {
 
   @PostMapping("/reset-password")
   public ResponseEntity<?> resetPassword(
-      @RequestParam String token, @RequestBody ResetPasswordDto resetPasswordDto) {
-    authService.resetPassword(token, resetPasswordDto);
+      @RequestParam String token, @RequestBody ResetPasswordRequestDto resetPasswordRequestDto) {
+    authService.resetPassword(token, resetPasswordRequestDto);
     return new ResponseEntity<>(HttpStatus.OK);
   }
 }

@@ -1,4 +1,4 @@
-package org.example.projectmanagementapi.dto;
+package org.example.projectmanagementapi.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class CommentDto implements Serializable {
+public class CommentRequestDto implements Serializable {
   @NotNull(message = "Comment must have content")
   String content;
 

@@ -1,4 +1,4 @@
-package org.example.projectmanagementapi.dto;
+package org.example.projectmanagementapi.dto.request;
 
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -12,8 +12,7 @@ import org.example.projectmanagementapi.enums.PriorityStatus;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-@EqualsAndHashCode
-public class IssueDto implements Serializable {
+public class IssueRequestDto implements Serializable {
   @NotNull(message = "Issue must have a title")
   private String title;
 

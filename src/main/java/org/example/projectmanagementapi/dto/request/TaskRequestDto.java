@@ -1,4 +1,4 @@
-package org.example.projectmanagementapi.dto;
+package org.example.projectmanagementapi.dto.request;
 
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.*;
+import org.example.projectmanagementapi.dto.response.UserDto;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 import org.example.projectmanagementapi.enums.TaskStatus;
 
@@ -16,7 +17,7 @@ import org.example.projectmanagementapi.enums.TaskStatus;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class TaskDto implements Serializable {
+public class TaskRequestDto implements Serializable {
   @NotNull(message = "Task must have a description")
   String description;
 

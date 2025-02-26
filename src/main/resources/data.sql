@@ -31,14 +31,14 @@ INSERT INTO project_user (project_id, user_id) VALUES
                                                    (2, 3);
 
 -- Insert Comments
-INSERT INTO comment (content, created_at, updated_at, task_id, issue_id, user_id) VALUES
-                                                                                      ('This task is almost done.', '2025-02-15', NULL, 1, NULL, 2),
-                                                                                      ('We need more details.', '2025-02-16', '2025-02-17', NULL, 1, 3);
+INSERT INTO comment (content, created_at, updated_at, task_id, issue_id, user_id,is_edited) VALUES
+                                                                                      ('This task is almost done.', '2025-02-15', NULL, 1, NULL, 2,false),
+                                                                                      ('We need more details.', '2025-02-16', '2025-02-17', NULL, 1, 3,true);
 
 -- Insert Attachments
-INSERT INTO attachment (file_name, file_path, file_type, uploaded_at, task_id, issue_id) VALUES
-                                                                                             ('design_mockup.png', '/uploads/design_mockup.png', 'image/png', '2025-02-14', 2, NULL),
-                                                                                             ('error_log.txt', '/uploads/error_log.txt', 'text/plain', '2025-02-15', NULL, 1);
+INSERT INTO attachment (file_name, file_path, file_type, uploaded_at, task_id, issue_id,author_id) VALUES
+                                                                                             ('design_mockup.png', '/uploads/design_mockup.png', 'image/png', '2025-02-14', 2, NULL, 3),
+                                                                                             ('error_log.txt', '/uploads/error_log.txt', 'text/plain', '2025-02-15', NULL, 1,2);
 
 -- Insert Notifications
 INSERT INTO notification (type, message, is_read, created_at) VALUES

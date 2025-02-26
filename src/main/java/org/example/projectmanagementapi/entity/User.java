@@ -89,6 +89,10 @@ public class User implements UserDetails {
   @ToString.Exclude
   private List<Comment> comments;
 
+  @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
+  @ToString.Exclude
+  private List<Attachment> attachments;
+
   public void addOwnedProject(Project project) {
     if (projects == null) {
       ownedProjects = new ArrayList<>();
@@ -135,6 +139,14 @@ public class User implements UserDetails {
     }
     comments.add(comment);
     comment.setAuthor(this);
+  }
+
+  public void addAttachment(Attachment attachment) {
+    if (attachments == null) {
+      attachments = new ArrayList<>();
+    }
+    attachments.add(attachment);
+    attachment.setAuthor(this);
   }
 
   @Override

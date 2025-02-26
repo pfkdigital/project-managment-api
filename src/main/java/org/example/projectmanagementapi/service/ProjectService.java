@@ -1,22 +1,21 @@
 package org.example.projectmanagementapi.service;
 
 import java.util.List;
-import org.example.projectmanagementapi.dto.ProjectDto;
-import org.example.projectmanagementapi.entity.Project;
-import org.example.projectmanagementapi.entity.User;
+
+import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
+import org.example.projectmanagementapi.dto.request.ProjectRequestDto;
+import org.example.projectmanagementapi.dto.response.ProjectWithUsersDto;
 
 public interface ProjectService {
-  Project createProject(ProjectDto projectDto);
+  ProjectWithUsersDto createProject(ProjectRequestDto projectRequestDto);
 
-  Project getProjectById(Integer projectId);
+  DetailedProjectDto getProjectById(Integer projectId);
 
-  List<Project> getAllProjects();
+  List<ProjectWithUsersDto> getAllProjects();
 
-  Project updateProject(Integer projectId, ProjectDto projectDto);
+  DetailedProjectDto updateProject(Integer projectId, ProjectRequestDto projectRequestDto);
 
   void deleteProject(Integer projectId);
-
-  List<User> getProjectMembers(Integer projectId);
 
   void addProjectMember(Integer projectId, Integer userId);
 

@@ -1,11 +1,16 @@
 package org.example.projectmanagementapi.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.IssueDto;
+import org.example.projectmanagementapi.dto.request.IssueRequestDto;
+import org.example.projectmanagementapi.dto.response.DetailedIssueDto;
+import org.example.projectmanagementapi.dto.response.IssueDto;
 import org.example.projectmanagementapi.service.impl.IssueServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/issues")
@@ -15,24 +20,24 @@ public class IssueController {
   private final IssueServiceImpl issueService;
 
   @PostMapping
-  public ResponseEntity<?> createIssue(@RequestBody IssueDto issueDto) {
-    return new ResponseEntity<>(issueService.createIssue(issueDto), HttpStatus.CREATED);
+  public ResponseEntity<IssueDto> createIssue(@Valid @RequestBody IssueRequestDto issueRequestDto) {
+    return new ResponseEntity<>(issueService.createIssue(issueRequestDto), HttpStatus.CREATED);
   }
 
   @GetMapping
-  public ResponseEntity<?> getAllIssues() {
+  public ResponseEntity<List<IssueDto>> getAllIssues() {
     return new ResponseEntity<>(issueService.getAllIssues(), HttpStatus.OK);
   }
 
   @GetMapping("/{issueId}")
-  public ResponseEntity<?> getIssue(@PathVariable Integer issueId) {
+  public ResponseEntity<DetailedIssueDto> getIssue(@PathVariable Integer issueId) {
     return new ResponseEntity<>(issueService.getIssue(issueId), HttpStatus.OK);
   }
 
   @PutMapping("/{issueId}")
-  public ResponseEntity<?> updateIssue(
-      @PathVariable Integer issueId, @RequestBody IssueDto issueDto) {
-    return new ResponseEntity<>(issueService.updateIssue(issueId, issueDto), HttpStatus.OK);
+  public ResponseEntity<DetailedIssueDto> updateIssue(
+      @PathVariable Integer issueId, @Valid @RequestBody IssueRequestDto issueRequestDto) {
+    return new ResponseEntity<>(issueService.updateIssue(issueId, issueRequestDto), HttpStatus.OK);
   }
 
   @DeleteMapping("/{issueId}")

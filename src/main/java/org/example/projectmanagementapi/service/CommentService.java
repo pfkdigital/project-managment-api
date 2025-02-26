@@ -1,17 +1,17 @@
 package org.example.projectmanagementapi.service;
 
 import java.util.List;
-import org.example.projectmanagementapi.dto.CommentDto;
-import org.example.projectmanagementapi.entity.Comment;
+import org.example.projectmanagementapi.dto.request.CommentRequestDto;
+import org.example.projectmanagementapi.dto.response.CommentDto;
 
 public interface CommentService {
-  Comment createComment(CommentDto comment);
+  CommentDto createComment(CommentRequestDto comment);
 
-  Comment getComment(Integer commentId);
+  CommentDto getComment(Integer commentId);
 
-  List<Comment> getComments();
+  List<CommentDto> getComments();
 
-  Comment updateComment(Integer commentId, CommentDto comment);
+  CommentDto updateComment(Integer commentId, CommentRequestDto comment);
 
   void deleteComment(Integer commentId);
 }

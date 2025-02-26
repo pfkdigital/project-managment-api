@@ -4,8 +4,10 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.config.WebSocketHandler;
+import org.example.projectmanagementapi.dto.response.NotificationDto;
 import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.enums.NotificationType;
+import org.example.projectmanagementapi.mapper.NotificationMapper;
 import org.example.projectmanagementapi.repository.NotificationRepository;
 import org.example.projectmanagementapi.service.NotificationService;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 public class NotificationServiceImpl implements NotificationService {
 
   private final NotificationRepository notificationRepository;
+  private final NotificationMapper notificationMapper;
   private final WebSocketHandler webSocketHandler;
 
   @Override
@@ -23,8 +26,8 @@ public class NotificationServiceImpl implements NotificationService {
   }
 
   @Override
-  public List<Notification> getAllNotifications() {
-    return notificationRepository.findAll();
+  public List<NotificationDto> getAllNotifications() {
+    return notificationRepository.findAll().stream().map(notificationMapper::toNotificationDto).toList();
   }
 
   @Override

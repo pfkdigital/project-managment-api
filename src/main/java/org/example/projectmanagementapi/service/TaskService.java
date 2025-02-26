@@ -1,17 +1,19 @@
 package org.example.projectmanagementapi.service;
 
 import java.util.List;
-import org.example.projectmanagementapi.dto.TaskDto;
-import org.example.projectmanagementapi.entity.Task;
+
+import org.example.projectmanagementapi.dto.response.DetailedTaskDto;
+import org.example.projectmanagementapi.dto.response.TaskDto;
+import org.example.projectmanagementapi.dto.request.TaskRequestDto;
 
 public interface TaskService {
-  Task createTask(TaskDto taskDto);
+  TaskDto createTask(TaskRequestDto taskDto);
 
-  Task updateTask(Integer taskId, TaskDto taskDto);
+  DetailedTaskDto updateTask(Integer taskId, TaskRequestDto taskDto);
 
   void deleteTask(Integer taskId);
 
-  Task getTask(Integer taskId);
+  DetailedTaskDto getTask(Integer taskId);
 
-  List<Task> getTasks();
+  List<TaskDto> getTasks();
 }

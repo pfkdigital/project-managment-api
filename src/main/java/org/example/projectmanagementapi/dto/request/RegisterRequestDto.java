@@ -1,18 +1,23 @@
-package org.example.projectmanagementapi.dto;
+package org.example.projectmanagementapi.dto.request;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Builder
-@Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class ResetPasswordDto {
+@AllArgsConstructor
+@Data
+public class RegisterRequestDto {
+  @Email(message = "Email should be valid", regexp = "^(.+)@(.+)$")
+  @NotEmpty(message = "Email should not be empty")
+  private String email;
+
+  @NotEmpty(message = "Username should not be empty")
+  private String username;
+
   @NotEmpty(message = "Password should not be empty")
   @Min(value = 8, message = "Password should be at least 8 characters long")
   @Pattern(

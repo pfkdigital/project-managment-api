@@ -1,6 +1,7 @@
 package org.example.projectmanagementapi.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.projectmanagementapi.dto.response.AttachmentDto;
 import org.example.projectmanagementapi.service.AttachmentService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,14 +16,14 @@ public class AttachmentController {
   private final AttachmentService attachmentService;
 
   @PostMapping("/task/{taskId}")
-  public ResponseEntity<?> createAttachmentForTask(
+  public ResponseEntity<AttachmentDto> createAttachmentForTask(
       @RequestBody MultipartFile file, @PathVariable Integer taskId) {
     return new ResponseEntity<>(
         attachmentService.createAttachmentForTask(file, taskId), HttpStatus.CREATED);
   }
 
   @PostMapping("/issue/{issueId}")
-  public ResponseEntity<?> createAttachmentForIssue(
+  public ResponseEntity<AttachmentDto> createAttachmentForIssue(
       @RequestBody MultipartFile file, @PathVariable Integer issueId) {
     return new ResponseEntity<>(
         attachmentService.createAttachmentForIssue(file, issueId), HttpStatus.CREATED);

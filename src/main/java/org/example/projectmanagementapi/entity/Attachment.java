@@ -36,4 +36,8 @@ public class Attachment {
   @ManyToOne()
   @JoinColumn(name = "issue_id", nullable = true)
   private Task task;
+
+  @ManyToOne()
+  @JoinColumn(name = "author_id", nullable = false)
+  private User author;
 }

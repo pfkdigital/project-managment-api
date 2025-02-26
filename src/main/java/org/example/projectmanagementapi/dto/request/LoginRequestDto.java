@@ -1,4 +1,4 @@
-package org.example.projectmanagementapi.dto;
+package org.example.projectmanagementapi.dto.request;
 
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class LoginDto {
+public class LoginRequestDto {
 
   @NotEmpty(message = "Username should not be empty")
   private String username;

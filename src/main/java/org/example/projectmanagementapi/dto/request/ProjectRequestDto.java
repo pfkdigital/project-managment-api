@@ -1,4 +1,4 @@
-package org.example.projectmanagementapi.dto;
+package org.example.projectmanagementapi.dto.request;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +14,7 @@ import org.hibernate.validator.constraints.URL;
 @NoArgsConstructor
 @Data
 @Builder
-public class ProjectDto implements Serializable {
+public class ProjectRequestDto implements Serializable {
   @NotEmpty(message = "Project must have a name")
   private String name;
 

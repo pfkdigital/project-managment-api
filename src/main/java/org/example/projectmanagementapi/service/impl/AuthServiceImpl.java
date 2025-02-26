@@ -3,7 +3,11 @@ package org.example.projectmanagementapi.service.impl;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.*;
+import org.example.projectmanagementapi.dto.request.ForgotPasswordDto;
+import org.example.projectmanagementapi.dto.request.LoginRequestDto;
+import org.example.projectmanagementapi.dto.request.RegisterRequestDto;
+import org.example.projectmanagementapi.dto.request.ResetPasswordRequestDto;
+import org.example.projectmanagementapi.dto.response.UserInformationDto;
 import org.example.projectmanagementapi.entity.PasswordResetToken;
 import org.example.projectmanagementapi.entity.User;
 import org.example.projectmanagementapi.entity.VerificationToken;
@@ -19,6 +23,7 @@ import org.example.projectmanagementapi.util.JwtUtility;
 import org.example.projectmanagementapi.util.TokenUtility;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -31,21 +36,27 @@ public class AuthServiceImpl implements AuthService {
   private final UserRepository userRepository;
   private final VerificationTokenRepository verificationTokenRepository;
   private final PasswordResetTokenRepository passwordResetTokenRepository;
+  private final BCryptPasswordEncoder passwordEncoder;
   private final JwtUtility jwtUtility;
   private final CookieUtility cookieUtility;
   private final TokenUtility tokenUtility;
 
   @Override
-  public void registerUser(RegisterDto registerDto) {
-    if (userRepository.existsByEmail(registerDto.getEmail())) {
+  public void registerUser(RegisterRequestDto registerRequestDto) {
+
+    if (userRepository.existsByEmail(registerRequestDto.getEmail())) {
       throw new IllegalArgumentException("Email already exists");
+    }
+
+    if (userRepository.existsByUsername(registerRequestDto.getUsername())) {
+      throw new IllegalArgumentException("Username already exists");
     }
 
     User newUser =
         User.builder()
-            .email(registerDto.getEmail())
-            .username(registerDto.getUsername())
-            .password(registerDto.getPassword())
+            .email(registerRequestDto.getEmail())
+            .username(registerRequestDto.getUsername())
+            .password(registerRequestDto.getPassword())
             .role(Role.USER)
             .enabled(false)
             .build();
@@ -79,22 +90,22 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public UserInformationDto loginUser(LoginDto loginDto, HttpServletResponse response) {
-    authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
-
+  public UserInformationDto loginUser(LoginRequestDto loginRequestDto, HttpServletResponse response) {
     User user =
-        userRepository
-            .findByUsername(loginDto.getUsername())
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            userRepository
+                    .findByUsername(loginRequestDto.getUsername())
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
     if (!user.isEnabled()) {
       throw new IllegalArgumentException("User is not verified");
     }
 
-    if (!user.getPassword().equals(loginDto.getPassword())) {
+    if (!passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())) {
       throw new IllegalArgumentException("Invalid credentials");
     }
+
+    authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(loginRequestDto.getUsername(), loginRequestDto.getPassword()));
 
     String accessToken = jwtUtility.generateAccessToken(user);
     String refreshToken = jwtUtility.generateRefreshToken(user);
@@ -129,7 +140,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public void resetPassword(String token, ResetPasswordDto resetPasswordDto) {
+  public void resetPassword(String token, ResetPasswordRequestDto resetPasswordRequestDto) {
     PasswordResetToken passwordResetToken =
         passwordResetTokenRepository
             .findByToken(token)
@@ -137,7 +148,7 @@ public class AuthServiceImpl implements AuthService {
 
     User user = passwordResetToken.getUser();
 
-    user.setPassword(resetPasswordDto.getPassword());
+    user.setPassword(resetPasswordRequestDto.getPassword());
     userRepository.save(user);
 
     passwordResetTokenRepository.delete(passwordResetToken);
