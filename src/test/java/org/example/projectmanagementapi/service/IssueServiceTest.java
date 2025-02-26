@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.Optional;
-import org.example.projectmanagementapi.dto.IssueDto;
+import org.example.projectmanagementapi.dto.request.IssueRequestDto;
 import org.example.projectmanagementapi.entity.Issue;
 import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.entity.Project;
@@ -40,8 +40,8 @@ class IssueServiceTest {
 
   @Test
   void createIssue_createsAndReturnsIssue() {
-    IssueDto issueDto =
-        IssueDto.builder()
+    IssueRequestDto issueRequestDto =
+        IssueRequestDto.builder()
             .title("Title")
             .description("Description")
             .reportedById(1)
@@ -59,7 +59,7 @@ class IssueServiceTest {
     when(projectRepository.findById(1)).thenReturn(Optional.of(project));
     when(issueRepository.save(any(Issue.class))).thenReturn(issue);
 
-    Issue createdIssue = issueService.createIssue(issueDto);
+    Issue createdIssue = issueService.createIssue(issueRequestDto);
 
     assertNotNull(createdIssue);
     assertEquals("Title", createdIssue.getTitle());
@@ -69,8 +69,8 @@ class IssueServiceTest {
 
   @Test
   void createIssue_throwsExceptionWhenUserNotFound() {
-    IssueDto issueDto =
-        IssueDto.builder()
+    IssueRequestDto issueRequestDto =
+        IssueRequestDto.builder()
             .title("Title")
             .description("Description")
             .reportedById(1)
@@ -81,7 +81,7 @@ class IssueServiceTest {
 
     when(userRepository.findById(1)).thenReturn(Optional.empty());
 
-    assertThrows(RuntimeException.class, () -> issueService.createIssue(issueDto));
+    assertThrows(RuntimeException.class, () -> issueService.createIssue(issueRequestDto));
     verify(issueRepository, never()).save(any(Issue.class));
     verify(notificationService, never()).createNotification(any(Notification.class));
   }
@@ -122,8 +122,8 @@ class IssueServiceTest {
 
   @Test
   void updateIssue_updatesAndReturnsIssue() {
-    IssueDto issueDto =
-        IssueDto.builder()
+    IssueRequestDto issueRequestDto =
+        IssueRequestDto.builder()
             .title("UpdatedTitle")
             .description("UpdatedDescription")
             .assignedToId(1)
@@ -137,7 +137,7 @@ class IssueServiceTest {
     when(userRepository.findById(1)).thenReturn(Optional.of(assignedToUser));
     when(issueRepository.save(any(Issue.class))).thenReturn(issue);
 
-    Issue updatedIssue = issueService.updateIssue(1, issueDto);
+    Issue updatedIssue = issueService.updateIssue(1, issueRequestDto);
 
     assertNotNull(updatedIssue);
     assertEquals("UpdatedTitle", updatedIssue.getTitle());
@@ -147,8 +147,8 @@ class IssueServiceTest {
 
   @Test
   void updateIssue_throwsExceptionWhenIssueNotFound() {
-    IssueDto issueDto =
-        IssueDto.builder()
+    IssueRequestDto issueRequestDto =
+        IssueRequestDto.builder()
             .title("UpdatedTitle")
             .description("UpdatedDescription")
             .assignedToId(1)
@@ -158,7 +158,7 @@ class IssueServiceTest {
 
     when(issueRepository.findById(1)).thenReturn(Optional.empty());
 
-    assertThrows(RuntimeException.class, () -> issueService.updateIssue(1, issueDto));
+    assertThrows(RuntimeException.class, () -> issueService.updateIssue(1, issueRequestDto));
     verify(issueRepository, never()).save(any(Issue.class));
     verify(notificationService, never()).createNotification(any(Notification.class));
   }

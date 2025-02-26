@@ -2,11 +2,14 @@ package org.example.projectmanagementapi.service.impl;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.TaskDto;
+import org.example.projectmanagementapi.dto.response.DetailedTaskDto;
+import org.example.projectmanagementapi.dto.response.TaskDto;
+import org.example.projectmanagementapi.dto.request.TaskRequestDto;
 import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.entity.Project;
 import org.example.projectmanagementapi.entity.Task;
 import org.example.projectmanagementapi.enums.NotificationType;
+import org.example.projectmanagementapi.mapper.TaskMapper;
 import org.example.projectmanagementapi.repository.ProjectRepository;
 import org.example.projectmanagementapi.repository.TaskRepository;
 import org.example.projectmanagementapi.service.NotificationService;
@@ -20,9 +23,10 @@ public class TaskServiceImpl implements TaskService {
   private final TaskRepository taskRepository;
   private final ProjectRepository projectRepository;
   private final NotificationService notificationService;
+  private final TaskMapper taskMapper;
 
   @Override
-  public Task createTask(TaskDto taskDto) {
+  public TaskDto createTask(TaskRequestDto taskDto) {
     Project project =
         projectRepository
             .findById(taskDto.getProjectId())
@@ -48,23 +52,27 @@ public class TaskServiceImpl implements TaskService {
 
     notificationService.createNotification(notification);
 
-    return newTask;
+    return taskMapper.toTaskDto(newTask);
   }
 
   @Override
-  public Task getTask(Integer taskId) {
-    return taskRepository
-        .getTaskByIdWithAttachmentAndComments(taskId)
-        .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
+  public DetailedTaskDto getTask(Integer taskId) {
+    Task selectedTask =
+        taskRepository
+            .findById(taskId)
+            .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
+
+    return taskMapper.toDetailedTaskDto(selectedTask);
   }
 
   @Override
-  public List<Task> getTasks() {
-    return taskRepository.findAll();
+  public List<TaskDto> getTasks() {
+    List<Task> tasks = taskRepository.findAll();
+    return tasks.stream().map(taskMapper::toTaskDto).toList();
   }
 
   @Override
-  public Task updateTask(Integer taskId, TaskDto taskDto) {
+  public DetailedTaskDto updateTask(Integer taskId, TaskRequestDto taskDto) {
     Task selectedTask =
         taskRepository
             .findById(taskId)
@@ -85,7 +93,7 @@ public class TaskServiceImpl implements TaskService {
             .build();
 
     notificationService.createNotification(notification);
-    return updatedTask;
+    return taskMapper.toDetailedTaskDto(updatedTask);
   }
 
   @Override

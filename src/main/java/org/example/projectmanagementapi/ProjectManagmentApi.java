@@ -11,5 +11,4 @@ public class ProjectManagmentApi {
     public static void main(String[] args) {
         SpringApplication.run(ProjectManagmentApi.class, args);
     }
-
 }

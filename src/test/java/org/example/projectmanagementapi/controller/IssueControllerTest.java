@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.Collections;
-import org.example.projectmanagementapi.dto.IssueDto;
+import org.example.projectmanagementapi.dto.request.IssueRequestDto;
 import org.example.projectmanagementapi.entity.Issue;
 import org.example.projectmanagementapi.service.impl.IssueServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,10 +30,10 @@ public class IssueControllerTest {
   @Test
   void testCreateIssue() {
     Issue issue = Issue.builder().id(1).title("Issue1").description("Description1").build();
-    IssueDto issueDto = new IssueDto();
-    when(issueService.createIssue(any(IssueDto.class))).thenReturn(issue);
+    IssueRequestDto issueRequestDto = new IssueRequestDto();
+    when(issueService.createIssue(any(IssueRequestDto.class))).thenReturn(issue);
 
-    ResponseEntity<?> response = issueController.createIssue(issueDto);
+    ResponseEntity<?> response = issueController.createIssue(issueRequestDto);
 
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
     assertEquals(issue, response.getBody());
@@ -64,10 +64,10 @@ public class IssueControllerTest {
   @Test
   void testUpdateIssue() {
     Issue issue = Issue.builder().id(1).title("Issue1").description("Description1").build();
-    IssueDto issueDto = new IssueDto();
-    when(issueService.updateIssue(anyInt(), any(IssueDto.class))).thenReturn(issue);
+    IssueRequestDto issueRequestDto = new IssueRequestDto();
+    when(issueService.updateIssue(anyInt(), any(IssueRequestDto.class))).thenReturn(issue);
 
-    ResponseEntity<?> response = issueController.updateIssue(1, issueDto);
+    ResponseEntity<?> response = issueController.updateIssue(1, issueRequestDto);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(issue, response.getBody());

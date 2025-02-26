@@ -4,11 +4,13 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.example.projectmanagementapi.dto.response.AttachmentDto;
 import org.example.projectmanagementapi.entity.Attachment;
 import org.example.projectmanagementapi.entity.Issue;
 import org.example.projectmanagementapi.entity.Task;
 import org.example.projectmanagementapi.enums.AcceptedFileType;
 import org.example.projectmanagementapi.enums.NotificationType;
+import org.example.projectmanagementapi.mapper.AttachmentMapper;
 import org.example.projectmanagementapi.repository.AttachmentRepository;
 import org.example.projectmanagementapi.repository.IssueRepository;
 import org.example.projectmanagementapi.repository.TaskRepository;
@@ -35,15 +37,16 @@ public class AttachmentClassImpl implements AttachmentService {
   private final IssueRepository issueRepository;
   private final NotificationService notificationService;
   private final S3Client s3Client;
+  private final AttachmentMapper attachmentMapper;
 
   @Override
-  public Attachment createAttachmentForTask(MultipartFile file, Integer taskId) {
-    return createAttachment(file, taskId, true);
+  public AttachmentDto createAttachmentForTask(MultipartFile file, Integer taskId) {
+    return attachmentMapper.toAttachmentDto(createAttachment(file, taskId, true));
   }
 
   @Override
-  public Attachment createAttachmentForIssue(MultipartFile file, Integer issueId) {
-    return createAttachment(file, issueId, false);
+  public AttachmentDto createAttachmentForIssue(MultipartFile file, Integer issueId) {
+    return attachmentMapper.toAttachmentDto(createAttachment(file, issueId, false));
   }
 
   @Override

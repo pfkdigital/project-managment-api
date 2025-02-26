@@ -2,11 +2,14 @@ package org.example.projectmanagementapi.service.impl;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.IssueDto;
+import org.example.projectmanagementapi.dto.request.IssueRequestDto;
+import org.example.projectmanagementapi.dto.response.DetailedIssueDto;
+import org.example.projectmanagementapi.dto.response.IssueDto;
 import org.example.projectmanagementapi.entity.Issue;
 import org.example.projectmanagementapi.entity.Project;
 import org.example.projectmanagementapi.entity.User;
 import org.example.projectmanagementapi.enums.NotificationType;
+import org.example.projectmanagementapi.mapper.IssueMapper;
 import org.example.projectmanagementapi.repository.IssueRepository;
 import org.example.projectmanagementapi.repository.ProjectRepository;
 import org.example.projectmanagementapi.repository.UserRepository;
@@ -22,18 +25,19 @@ public class IssueServiceImpl implements IssueService {
   private final UserRepository userRepository;
   private final ProjectRepository projectRepository;
   private final NotificationService notificationService;
+  private final IssueMapper issueMapper;
 
   @Override
-  public Issue createIssue(IssueDto issueDto) {
-    User reportedByUser = findUserById(issueDto.getReportedById());
-    User assignedToUser = findUserById(issueDto.getAssignedToId());
-    Project project = findProjectById(issueDto.getProjectId());
+  public IssueDto createIssue(IssueRequestDto issueRequestDto) {
+    User reportedByUser = findUserById(issueRequestDto.getReportedById());
+    User assignedToUser = findUserById(issueRequestDto.getAssignedToId());
+    Project project = findProjectById(issueRequestDto.getProjectId());
 
     Issue newIssue =
         Issue.builder()
-            .title(issueDto.getTitle())
-            .description(issueDto.getDescription())
-            .priorityStatus(issueDto.getPriorityStatus())
+            .title(issueRequestDto.getTitle())
+            .description(issueRequestDto.getDescription())
+            .priorityStatus(issueRequestDto.getPriorityStatus())
             .reportedBy(reportedByUser)
             .assignedTo(assignedToUser)
             .build();
@@ -47,28 +51,28 @@ public class IssueServiceImpl implements IssueService {
     notificationService.createNotification(
         "Issue " + savedIssue.getId() + " has been created", NotificationType.CREATION);
 
-    return savedIssue;
+    return issueMapper.toDto(savedIssue);
   }
 
   @Override
-  public Issue getIssue(Integer issueId) {
-    return findIssueById(issueId);
+  public DetailedIssueDto getIssue(Integer issueId) {
+    return issueMapper.toDetailedIssueDto(findIssueById(issueId));
   }
 
   @Override
-  public List<Issue> getAllIssues() {
-    return issueRepository.findAll();
+  public List<IssueDto> getAllIssues() {
+    return issueRepository.findAll().stream().map(issueMapper::toDto).toList();
   }
 
   @Override
-  public Issue updateIssue(Integer issueId, IssueDto issueDto) {
+  public DetailedIssueDto updateIssue(Integer issueId, IssueRequestDto issueRequestDto) {
     Issue selectedIssue = findIssueById(issueId);
-    User assignedToUser = findUserById(issueDto.getAssignedToId());
+    User assignedToUser = findUserById(issueRequestDto.getAssignedToId());
 
-    selectedIssue.setTitle(issueDto.getTitle());
-    selectedIssue.setDescription(issueDto.getDescription());
-    selectedIssue.setStatus(issueDto.getStatus());
-    selectedIssue.setPriorityStatus(issueDto.getPriorityStatus());
+    selectedIssue.setTitle(issueRequestDto.getTitle());
+    selectedIssue.setDescription(issueRequestDto.getDescription());
+    selectedIssue.setStatus(issueRequestDto.getStatus());
+    selectedIssue.setPriorityStatus(issueRequestDto.getPriorityStatus());
     assignedToUser.addAssignedIssue(selectedIssue);
 
     Issue updatedIssue = issueRepository.save(selectedIssue);
@@ -76,7 +80,7 @@ public class IssueServiceImpl implements IssueService {
     notificationService.createNotification(
         "Issue " + updatedIssue.getId() + " has been updated", NotificationType.UPDATE);
 
-    return updatedIssue;
+    return issueMapper.toDetailedIssueDto(updatedIssue);
   }
 
   @Override

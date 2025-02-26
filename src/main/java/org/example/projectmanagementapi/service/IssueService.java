@@ -1,17 +1,18 @@
 package org.example.projectmanagementapi.service;
 
 import java.util.List;
-import org.example.projectmanagementapi.dto.IssueDto;
-import org.example.projectmanagementapi.entity.Issue;
+import org.example.projectmanagementapi.dto.request.IssueRequestDto;
+import org.example.projectmanagementapi.dto.response.DetailedIssueDto;
+import org.example.projectmanagementapi.dto.response.IssueDto;
 
 public interface IssueService {
-  Issue createIssue(IssueDto issueDto);
+  IssueDto createIssue(IssueRequestDto issueRequestDto);
 
-  Issue getIssue(Integer issueId);
+  DetailedIssueDto getIssue(Integer issueId);
 
-  List<Issue> getAllIssues();
+  List<IssueDto> getAllIssues();
 
-  Issue updateIssue(Integer issueId, IssueDto issueDto);
+  DetailedIssueDto updateIssue(Integer issueId, IssueRequestDto issueRequestDto);
 
   void deleteIssue(Integer issueId);
 }

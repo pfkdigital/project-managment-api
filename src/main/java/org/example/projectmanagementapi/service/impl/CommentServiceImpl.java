@@ -3,21 +3,25 @@ package org.example.projectmanagementapi.service.impl;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.CommentDto;
+import org.example.projectmanagementapi.dto.request.CommentRequestDto;
+import org.example.projectmanagementapi.dto.response.CommentDto;
 import org.example.projectmanagementapi.entity.*;
 import org.example.projectmanagementapi.enums.NotificationType;
+import org.example.projectmanagementapi.mapper.CommentMapper;
 import org.example.projectmanagementapi.repository.CommentRepository;
 import org.example.projectmanagementapi.repository.IssueRepository;
 import org.example.projectmanagementapi.repository.TaskRepository;
 import org.example.projectmanagementapi.repository.UserRepository;
 import org.example.projectmanagementapi.service.CommentService;
 import org.example.projectmanagementapi.service.NotificationService;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
 
+  private final CommentMapper commentMapper;
   private final CommentRepository commentRepository;
   private final IssueRepository issueRepository;
   private final TaskRepository taskRepository;
@@ -25,7 +29,7 @@ public class CommentServiceImpl implements CommentService {
   private final NotificationService notificationService;
 
   @Override
-  public Comment createComment(CommentDto comment) {
+  public CommentDto createComment(CommentRequestDto comment) {
     User author = findUserById(comment.getAuthorId());
     Issue issue = findIssueById(comment.getIssueId());
     Task task = findTaskById(comment.getTaskId());
@@ -37,6 +41,7 @@ public class CommentServiceImpl implements CommentService {
             .author(author)
             .issue(issue)
             .task(task)
+            .isEdited(false)
             .build();
 
     author.addComment(newComment);
@@ -54,29 +59,36 @@ public class CommentServiceImpl implements CommentService {
     notificationService.createNotification(
         "Comment " + savedComment.getId() + " has been created", NotificationType.CREATION);
 
-    return savedComment;
+    return commentMapper.toDto(savedComment);
   }
 
   @Override
-  public Comment getComment(Integer commentId) {
-    return findCommentById(commentId);
+  public CommentDto getComment(Integer commentId) {
+    return commentMapper.toDto(findCommentById(commentId));
   }
 
   @Override
-  public List<Comment> getComments() {
-    return commentRepository.findAll();
+  public List<CommentDto> getComments() {
+    return commentRepository.findAll().stream().map(commentMapper::toDto).toList();
   }
 
   @Override
-  public Comment updateComment(Integer commentId, CommentDto comment) {
+  public CommentDto updateComment(Integer commentId, CommentRequestDto comment) {
+    User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+    if (!currentUser.getId().equals(comment.getAuthorId())) {
+      throw new IllegalArgumentException("You can only update your own comments");
+    }
+
     Comment existingComment = findCommentById(commentId);
     existingComment.setContent(comment.getContent());
     existingComment.setUpdatedAt(LocalDate.now());
+    existingComment.setIsEdited(true);
 
     notificationService.createNotification(
         "Comment " + existingComment.getId() + " has been updated", NotificationType.UPDATE);
 
-    return commentRepository.save(existingComment);
+    return commentMapper.toDto(commentRepository.save(existingComment));
   }
 
   @Override

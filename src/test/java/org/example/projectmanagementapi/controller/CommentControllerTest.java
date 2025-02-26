@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.Collections;
-import org.example.projectmanagementapi.dto.CommentDto;
+import org.example.projectmanagementapi.dto.request.CommentRequestDto;
 import org.example.projectmanagementapi.entity.Comment;
 import org.example.projectmanagementapi.service.impl.CommentServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,9 +30,9 @@ public class CommentControllerTest {
   @Test
   void testCreateComment() {
     Comment comment = new Comment();
-    when(commentService.createComment(any(CommentDto.class))).thenReturn(comment);
+    when(commentService.createComment(any(CommentRequestDto.class))).thenReturn(comment);
 
-    ResponseEntity<?> response = commentController.createComment(new CommentDto());
+    ResponseEntity<?> response = commentController.createComment(new CommentRequestDto());
 
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
     assertEquals(comment, response.getBody());
@@ -62,9 +62,9 @@ public class CommentControllerTest {
   @Test
   void testUpdateComment() {
     Comment comment = new Comment();
-    when(commentService.updateComment(anyInt(), any(CommentDto.class))).thenReturn(comment);
+    when(commentService.updateComment(anyInt(), any(CommentRequestDto.class))).thenReturn(comment);
 
-    ResponseEntity<?> response = commentController.updateComment(1, new CommentDto());
+    ResponseEntity<?> response = commentController.updateComment(1, new CommentRequestDto());
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(comment, response.getBody());

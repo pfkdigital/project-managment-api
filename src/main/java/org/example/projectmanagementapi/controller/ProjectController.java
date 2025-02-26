@@ -1,11 +1,16 @@
 package org.example.projectmanagementapi.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.ProjectDto;
+import org.example.projectmanagementapi.dto.request.ProjectRequestDto;
+import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
+import org.example.projectmanagementapi.dto.response.ProjectWithUsersDto;
 import org.example.projectmanagementapi.service.impl.ProjectServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/projects")
@@ -14,35 +19,38 @@ public class ProjectController {
   private final ProjectServiceImpl projectService;
 
   @PostMapping
-  public ResponseEntity<?> createProject(@RequestBody ProjectDto projectDto) {
-    return new ResponseEntity<>(projectService.createProject(projectDto), HttpStatus.CREATED);
+  public ResponseEntity<ProjectWithUsersDto> createProject(
+      @Valid @RequestBody ProjectRequestDto projectRequestDto) {
+    return new ResponseEntity<>(
+        projectService.createProject(projectRequestDto), HttpStatus.CREATED);
   }
 
   @GetMapping("/{projectId}")
-  public ResponseEntity<?> getProjectById(@PathVariable Integer projectId) {
+  public ResponseEntity<DetailedProjectDto> getProjectById(@PathVariable Integer projectId) {
     return new ResponseEntity<>(projectService.getProjectById(projectId), HttpStatus.OK);
   }
 
   @GetMapping
-  public ResponseEntity<?> getAllProjects() {
+  public ResponseEntity<List<ProjectWithUsersDto>> getAllProjects() {
     return new ResponseEntity<>(projectService.getAllProjects(), HttpStatus.OK);
   }
 
   @PutMapping("/{projectId}")
-  public ResponseEntity<?> updateProject(
-      @PathVariable Integer projectId, @RequestBody ProjectDto projectDto) {
-    return new ResponseEntity<>(projectService.updateProject(projectId, projectDto), HttpStatus.OK);
+  public ResponseEntity<DetailedProjectDto> updateProject(
+      @PathVariable Integer projectId, @Valid @RequestBody ProjectRequestDto projectRequestDto) {
+    return new ResponseEntity<>(
+        projectService.updateProject(projectId, projectRequestDto), HttpStatus.OK);
   }
 
   @PutMapping("/{projectId}/members/{userId}")
-  public ResponseEntity<?> addProjectMember(
+  public ResponseEntity<DetailedProjectDto> addProjectMember(
       @PathVariable Integer projectId, @PathVariable Integer userId) {
     projectService.addProjectMember(projectId, userId);
     return new ResponseEntity<>(HttpStatus.OK);
   }
 
   @DeleteMapping("/{projectId}/members/{userId}")
-  public ResponseEntity<?> removeProjectMember(
+  public ResponseEntity<DetailedProjectDto> removeProjectMember(
       @PathVariable Integer projectId, @PathVariable Integer userId) {
     projectService.removeProjectMember(projectId, userId);
     return new ResponseEntity<>(HttpStatus.OK);

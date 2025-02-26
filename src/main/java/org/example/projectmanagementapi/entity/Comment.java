@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 @Entity
 @AllArgsConstructor
@@ -26,7 +27,11 @@ public class Comment {
   private LocalDate createdAt;
 
   @Column(name = "updated_at", nullable = true, updatable = true)
+  @LastModifiedDate
   private LocalDate updatedAt;
+
+  @Column(name = "is_edited", nullable = false)
+  private Boolean isEdited;
 
   @ManyToOne()
   @JoinColumn(name = "task_id", nullable = true)
