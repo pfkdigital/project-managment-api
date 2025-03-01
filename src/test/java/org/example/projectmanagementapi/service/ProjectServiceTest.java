@@ -1,4 +1,4 @@
-package org.example.projectmanagementapi.service.impl;
+package org.example.projectmanagementapi.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -15,6 +15,7 @@ import org.example.projectmanagementapi.mapper.ProjectMapper;
 import org.example.projectmanagementapi.repository.ProjectRepository;
 import org.example.projectmanagementapi.repository.UserRepository;
 import org.example.projectmanagementapi.service.NotificationService;
+import org.example.projectmanagementapi.service.impl.ProjectServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,7 +1,9 @@
 package org.example.projectmanagementapi.service.impl;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.response.AttachmentDto;
@@ -27,7 +29,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 @Service
 @RequiredArgsConstructor
-public class AttachmentClassImpl implements AttachmentService {
+public class AttachmentServiceImpl implements AttachmentService {
 
   @Value("${cloud.aws.s3.bucket}")
   private String bucketName;
