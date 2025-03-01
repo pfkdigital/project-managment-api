@@ -5,50 +5,35 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
-import org.example.projectmanagementapi.entity.Attachment;
-import org.example.projectmanagementapi.service.AttachmentService;
-import org.junit.jupiter.api.BeforeEach;
+import org.example.projectmanagementapi.dto.response.AttachmentDto;
+import org.example.projectmanagementapi.service.impl.AttachmentServiceImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
+@ExtendWith(MockitoExtension.class)
 public class AttachmentControllerTest {
 
-  @Mock private AttachmentService attachmentService;
+  @Mock private AttachmentServiceImpl attachmentService;
 
   @InjectMocks private AttachmentController attachmentController;
 
-  @BeforeEach
-  void setUp() {
-    MockitoAnnotations.openMocks(this);
-  }
+  @Mock private MultipartFile file;
 
   @Test
-  void testCreateAttachmentForTask() {
-    Attachment attachment = Attachment.builder().id(1).fileName("file.txt").build();
-    when(attachmentService.createAttachmentForTask(any(MultipartFile.class), anyInt()))
-        .thenReturn(attachment);
+  void testCreateAttachment() {
+    AttachmentDto attachmentDto = new AttachmentDto();
+    when(attachmentService.createAttachmentForIssue(any(MultipartFile.class), anyInt())).thenReturn(attachmentDto);
 
-    ResponseEntity<?> response =
-        attachmentController.createAttachmentForTask(mock(MultipartFile.class), 1);
+    ResponseEntity<?> response = attachmentController.createAttachmentForIssue(file, 1);
 
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
-  }
-
-  @Test
-  void testCreateAttachmentForIssue() {
-    Attachment attachment = Attachment.builder().id(1).fileName("file.txt").build();
-    when(attachmentService.createAttachmentForIssue(any(MultipartFile.class), anyInt()))
-        .thenReturn(attachment);
-
-    ResponseEntity<?> response =
-        attachmentController.createAttachmentForIssue(mock(MultipartFile.class), 1);
-
-    assertEquals(HttpStatus.CREATED, response.getStatusCode());
+    assertEquals(attachmentDto, response.getBody());
   }
 
   @Test

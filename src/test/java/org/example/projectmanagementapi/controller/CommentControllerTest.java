@@ -2,11 +2,13 @@ package org.example.projectmanagementapi.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 import java.util.Collections;
+import java.util.List;
 import org.example.projectmanagementapi.dto.request.CommentRequestDto;
-import org.example.projectmanagementapi.entity.Comment;
+import org.example.projectmanagementapi.dto.response.CommentDto;
 import org.example.projectmanagementapi.service.impl.CommentServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,45 +31,46 @@ public class CommentControllerTest {
 
   @Test
   void testCreateComment() {
-    Comment comment = new Comment();
-    when(commentService.createComment(any(CommentRequestDto.class))).thenReturn(comment);
+    CommentDto commentDto = new CommentDto();
+    when(commentService.createComment(any(CommentRequestDto.class))).thenReturn(commentDto);
 
     ResponseEntity<?> response = commentController.createComment(new CommentRequestDto());
 
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
-    assertEquals(comment, response.getBody());
+    assertEquals(commentDto, response.getBody());
   }
 
   @Test
   void testGetComments() {
-    when(commentService.getComments()).thenReturn(Collections.emptyList());
+    List<CommentDto> comments = Collections.emptyList();
+    when(commentService.getComments()).thenReturn(comments);
 
     ResponseEntity<?> response = commentController.getComments();
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(Collections.emptyList(), response.getBody());
+    assertEquals(comments, response.getBody());
   }
 
   @Test
   void testGetComment() {
-    Comment comment = new Comment();
-    when(commentService.getComment(anyInt())).thenReturn(comment);
+    CommentDto commentDto = new CommentDto();
+    when(commentService.getComment(anyInt())).thenReturn(commentDto);
 
     ResponseEntity<?> response = commentController.getComment(1);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(comment, response.getBody());
+    assertEquals(commentDto, response.getBody());
   }
 
   @Test
   void testUpdateComment() {
-    Comment comment = new Comment();
-    when(commentService.updateComment(anyInt(), any(CommentRequestDto.class))).thenReturn(comment);
+    CommentDto commentDto = new CommentDto();
+    when(commentService.updateComment(anyInt(), any(CommentRequestDto.class))).thenReturn(commentDto);
 
     ResponseEntity<?> response = commentController.updateComment(1, new CommentRequestDto());
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(comment, response.getBody());
+    assertEquals(commentDto, response.getBody());
   }
 
   @Test
