@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @AllArgsConstructor
@@ -13,7 +14,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Getter
 @Setter
 @ToString
-public class Comment {
+public class Comment extends Auditable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,17 +22,6 @@ public class Comment {
 
   @Column(name = "content", nullable = false)
   private String content;
-
-  @Column(name = "created_at", nullable = false, updatable = false)
-  @CreatedDate
-  private LocalDate createdAt;
-
-  @Column(name = "updated_at", nullable = true, updatable = true)
-  @LastModifiedDate
-  private LocalDate updatedAt;
-
-  @Column(name = "is_edited", nullable = false)
-  private Boolean isEdited;
 
   @ManyToOne()
   @JoinColumn(name = "task_id", nullable = true)

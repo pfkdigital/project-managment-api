@@ -7,8 +7,8 @@ import org.example.projectmanagementapi.dto.response.IssueDto;
 import org.mapstruct.*;
 
 @Mapper(
-    componentModel = MappingConstants.ComponentModel.SPRING,
-    uses = {ProjectMapper.class, UserMapper.class, UserMapper.class})
+        componentModel = MappingConstants.ComponentModel.SPRING,
+        uses = {ProjectMapper.class, UserMapper.class, UserMapper.class})
 public interface IssueMapper {
 
   Issue toEntity(IssueRequestDto dto);

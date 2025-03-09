@@ -15,6 +15,5 @@ public class DetailedCommentDto {
     private Integer id;
     private String content;
     private LocalDate createdAt;
-    private LocalDate updatedAt;
     private UserDto author;
 }

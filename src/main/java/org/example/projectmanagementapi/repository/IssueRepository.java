@@ -8,6 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface IssueRepository extends JpaRepository<Issue, Integer> {
-  @EntityGraph(attributePaths = {"reportedBy", "assignedTo, project, comments,attachments"})
+  @EntityGraph(attributePaths = {"reportedBy", "assignedTo", "project", "comments","attachments"})
   Optional<Issue> findById(Integer id);
 }

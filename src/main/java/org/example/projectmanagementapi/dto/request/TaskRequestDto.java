@@ -19,23 +19,19 @@ import org.example.projectmanagementapi.enums.TaskStatus;
 @Data
 public class TaskRequestDto implements Serializable {
   @NotNull(message = "Task must have a description")
-  String description;
+  private String description;
 
   @NotNull(message = "Task must have a due date")
   @Future(message = "Due date must not be in the past")
-  LocalDate dueDate;
+  private LocalDate dueDate;
 
   @NotNull(message = "Task must have a priority status")
-  PriorityStatus priority;
+  private PriorityStatus priority;
 
   @NotNull(message = "Task must have a status")
   @Enumerated(EnumType.STRING)
-  TaskStatus status;
-
-  @NotNull
-  @Size(min = 1)
-  List<UserDto> users;
+  private TaskStatus status;
 
   @NotNull(message = "Task must be associated with a project")
-  Integer projectId;
+  private Integer projectId;
 }

@@ -18,9 +18,9 @@ public class TaskDto {
   private Integer id;
   private String description;
   private LocalDate dueDate;
+  private LocalDate createdAt;
   private PriorityStatus priority;
   private TaskStatus status;
   private NestedProjectDto project;
-  private List<UserDto> assignedUsers;
   private List<UserDto> users;
 }

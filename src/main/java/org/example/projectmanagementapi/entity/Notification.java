@@ -12,7 +12,7 @@ import org.example.projectmanagementapi.enums.NotificationType;
 @Setter
 @Builder
 @ToString
-public class Notification {
+public class Notification extends Auditable {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer id;
@@ -26,7 +26,4 @@ public class Notification {
 
   @Column(name = "is_read", nullable = false)
   private Boolean isRead;
-
-  @Column(name = "created_at", nullable = false)
-  private LocalDate createdAt;
 }

@@ -11,12 +11,12 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Data
 public class IssueDto implements Serializable {
-    Integer id;
-    String title;
-    String description;
-    IssueStatus status;
-    PriorityStatus priorityStatus;
-    NestedProjectDto project;
-    UserDto reportedBy;
-    UserDto assignedTo;
+    private Integer id;
+    private String title;
+    private String description;
+    private IssueStatus status;
+    private PriorityStatus priorityStatus;
+    private NestedProjectDto project;
+    private UserDto reportedBy;
+    private UserDto assignedTo;
 }

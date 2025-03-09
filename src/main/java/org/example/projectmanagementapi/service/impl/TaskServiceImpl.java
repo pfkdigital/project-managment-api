@@ -30,13 +30,14 @@ public class TaskServiceImpl implements TaskService {
     Project project =
         projectRepository
             .findById(taskDto.getProjectId())
-            .orElseThrow(() -> new IllegalArgumentException("Project not found"));
+            .orElseThrow(() -> new IllegalArgumentException("Project not found with id " + taskDto.getProjectId()));
 
     Task task =
         Task.builder()
             .description(taskDto.getDescription())
             .dueDate(taskDto.getDueDate())
             .priority(taskDto.getPriority())
+            .status(taskDto.getStatus())
             .build();
 
     project.addTask(task);

@@ -1,6 +1,8 @@
 package org.example.projectmanagementapi.entity;
 
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +18,7 @@ import org.springframework.data.annotation.CreatedDate;
 @Setter
 @Builder
 @ToString
-public class Task {
+public class Task extends  Auditable {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer id;
@@ -26,10 +28,6 @@ public class Task {
 
   @Column(name = "due_date", nullable = false)
   private LocalDate dueDate;
-
-  @Column(name = "created_at", nullable = false, updatable = false)
-  @CreatedDate
-  private LocalDate createdAt;
 
   @Column(name = "priority", nullable = false, updatable = false)
   @Enumerated(EnumType.STRING)
@@ -73,5 +71,13 @@ public class Task {
     }
     comments.add(comment);
     comment.setTask(this);
+  }
+
+  public void addUser(User user) {
+    if (users == null) {
+      users = new ArrayList<>();
+    }
+    users.add(user);
+    user.getTasks().add(this);
   }
 }

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.projectmanagementapi.enums.IssueStatus;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 
 import java.util.List;
@@ -16,10 +17,10 @@ public class DetailedIssueDto {
     private Integer id;
     private String title;
     private String description;
-    private String status;
+    private IssueStatus status;
     private PriorityStatus priorityStatus;
     private UserDto reportedBy;
     private UserDto assignedTo;
-    private List<DetailedCommentDto> comments;
-    private List<AttachmentDto> attachments;
+    private List<CommentDto> comments;
+    private List<NestedAttachment> attachments;
 }

@@ -60,7 +60,6 @@ class TaskServiceTest {
                 LocalDate.now().plusDays(1),
                 PriorityStatus.HIGH,
                 TaskStatus.OPEN,
-                List.of(new UserDto()),
                 1);
     }
 

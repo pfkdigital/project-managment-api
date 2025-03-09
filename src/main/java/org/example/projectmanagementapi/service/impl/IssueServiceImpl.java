@@ -37,6 +37,7 @@ public class IssueServiceImpl implements IssueService {
         Issue.builder()
             .title(issueRequestDto.getTitle())
             .description(issueRequestDto.getDescription())
+            .status(issueRequestDto.getStatus())
             .priorityStatus(issueRequestDto.getPriorityStatus())
             .reportedBy(reportedByUser)
             .assignedTo(assignedToUser)

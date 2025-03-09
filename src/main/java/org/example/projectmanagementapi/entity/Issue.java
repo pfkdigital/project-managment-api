@@ -1,6 +1,8 @@
 package org.example.projectmanagementapi.entity;
 
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.*;
@@ -14,7 +16,7 @@ import org.example.projectmanagementapi.enums.PriorityStatus;
 @Getter
 @Setter
 @ToString
-public class Issue {
+public class Issue extends  Auditable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +32,7 @@ public class Issue {
   @Enumerated(EnumType.STRING)
   private IssueStatus status;
 
-  @Column(name = "priority_status", nullable = false, updatable = false)
+  @Column(name = "priority_status", nullable = false)
   @Enumerated(EnumType.STRING)
   private PriorityStatus priorityStatus;
 

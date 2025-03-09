@@ -43,7 +43,7 @@ public class ProjectController {
   }
 
   @PutMapping("/{projectId}/members/{userId}")
-  public ResponseEntity<DetailedProjectDto> addProjectMember(
+  public ResponseEntity<?> addProjectMember(
       @PathVariable Integer projectId, @PathVariable Integer userId) {
     projectService.addProjectMember(projectId, userId);
     return new ResponseEntity<>(HttpStatus.OK);

@@ -38,7 +38,6 @@ public class ProjectServiceImpl implements ProjectService {
 
     newProject.addUser(owner);
     owner.addOwnedProject(newProject);
-    owner.addProject(newProject);
 
     Project savedProject = projectRepository.save(newProject);
 
@@ -64,7 +63,6 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public DetailedProjectDto updateProject(Integer projectId, ProjectRequestDto projectRequestDto) {
-
     User owner = findUserById(projectRequestDto.getOwnerId());
 
     Project selectedProject = findProjectById(projectId);
@@ -72,7 +70,12 @@ public class ProjectServiceImpl implements ProjectService {
     selectedProject.setDescription(projectRequestDto.getDescription());
     selectedProject.setDisplayImageUrl(projectRequestDto.getDisplayImageUrl());
     selectedProject.setStatus(projectRequestDto.getStatus());
-    owner.addProject(selectedProject);
+
+    if (!selectedProject.getOwner().getId().equals(owner.getId())) {
+      selectedProject.getOwner().getOwnedProjects().remove(selectedProject);
+      owner.addOwnedProject(selectedProject);
+      selectedProject.addUser(owner);
+    }
 
     Project updatedProject = projectRepository.save(selectedProject);
 

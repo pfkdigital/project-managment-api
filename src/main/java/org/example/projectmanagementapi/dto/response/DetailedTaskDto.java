@@ -18,9 +18,10 @@ public class DetailedTaskDto {
     private Integer id;
     private String description;
     private LocalDate dueDate;
+    private LocalDate createdAt;
     private PriorityStatus priority;
     private TaskStatus status;
-    private List<UserDto> assignedUsers;
-    private List<AttachmentDto> attachments;
+    private List<UserDto> users;
+    private List<NestedAttachment> attachments;
     private List<CommentDto> comments;
 }

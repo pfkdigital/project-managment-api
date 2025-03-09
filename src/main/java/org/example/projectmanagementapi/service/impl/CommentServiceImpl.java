@@ -1,6 +1,5 @@
 package org.example.projectmanagementapi.service.impl;
 
-import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.request.CommentRequestDto;
@@ -37,11 +36,9 @@ public class CommentServiceImpl implements CommentService {
     Comment newComment =
         Comment.builder()
             .content(comment.getContent())
-            .createdAt(LocalDate.now())
             .author(author)
             .issue(issue)
             .task(task)
-            .isEdited(false)
             .build();
 
     author.addComment(newComment);
@@ -82,8 +79,6 @@ public class CommentServiceImpl implements CommentService {
 
     Comment existingComment = findCommentById(commentId);
     existingComment.setContent(comment.getContent());
-    existingComment.setUpdatedAt(LocalDate.now());
-    existingComment.setIsEdited(true);
 
     notificationService.createNotification(
         "Comment " + existingComment.getId() + " has been updated", NotificationType.UPDATE);

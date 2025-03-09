@@ -8,16 +8,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Data
-public class AttachmentDto {
+public class NestedAttachment {
     private Integer id;
     private String fileName;
     private String filePath;
     private String fileType;
     private LocalDate uploadedAt;
-    private IssueDto issue;
-    private TaskDto task;
-    private UserDto author;
 }

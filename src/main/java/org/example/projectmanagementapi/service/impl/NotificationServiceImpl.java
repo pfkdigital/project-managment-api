@@ -63,7 +63,6 @@ public class NotificationServiceImpl implements NotificationService {
             .message(message)
             .type(type)
             .isRead(false)
-            .createdAt(LocalDate.now())
             .build();
 
     createNotification(notification);

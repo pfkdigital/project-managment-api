@@ -32,7 +32,7 @@ public class Project {
   @Column(name = "display_image_url", nullable = false)
   private String displayImageUrl;
 
-  @ManyToOne(cascade = CascadeType.ALL)
+  @ManyToOne()
   @JoinColumn(name = "owner_id")
   private User owner;
 

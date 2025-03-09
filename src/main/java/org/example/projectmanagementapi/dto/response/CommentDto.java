@@ -10,11 +10,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Data
 public class CommentDto implements Serializable {
-  Integer id;
-  String content;
-  LocalDate createdAt;
-  LocalDate updatedAt;
-  Integer taskId;
-  Integer issueId;
-  UserDto author;
+  private Integer id;
+  private String content;
+  private LocalDate createdAt;
+  private UserDto author;
 }
