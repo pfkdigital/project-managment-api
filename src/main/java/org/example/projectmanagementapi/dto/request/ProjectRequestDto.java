@@ -28,6 +28,5 @@ public class ProjectRequestDto implements Serializable {
   Integer ownerId;
 
   @NotEmpty(message = "Project must have a display image url")
-  @URL
   private String displayImageUrl;
 }

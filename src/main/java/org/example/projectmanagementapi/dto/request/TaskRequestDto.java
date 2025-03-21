@@ -32,10 +32,6 @@ public class TaskRequestDto implements Serializable {
   @Enumerated(EnumType.STRING)
   TaskStatus status;
 
-  @NotNull
-  @Size(min = 1)
-  List<UserDto> users;
-
   @NotNull(message = "Task must be associated with a project")
   Integer projectId;
 }

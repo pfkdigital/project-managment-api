@@ -7,7 +7,6 @@ import java.util.List;
 import lombok.*;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 import org.example.projectmanagementapi.enums.TaskStatus;
-import org.springframework.data.annotation.CreatedDate;
 
 @Entity
 @AllArgsConstructor
@@ -28,10 +27,9 @@ public class Task {
   private LocalDate dueDate;
 
   @Column(name = "created_at", nullable = false, updatable = false)
-  @CreatedDate
   private LocalDate createdAt;
 
-  @Column(name = "priority", nullable = false, updatable = false)
+  @Column(name = "priority", nullable = false)
   @Enumerated(EnumType.STRING)
   private PriorityStatus priority;
 
@@ -43,7 +41,7 @@ public class Task {
   @JoinColumn(name = "project_id")
   private Project project;
 
-  @ManyToMany()
+  @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
   @JoinTable(
       name = "task_user",
       joinColumns = @JoinColumn(name = "task_id"),

@@ -1,10 +1,7 @@
 package org.example.projectmanagementapi.service.impl;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.response.AttachmentDto;
 import org.example.projectmanagementapi.entity.Attachment;
@@ -16,15 +13,12 @@ import org.example.projectmanagementapi.mapper.AttachmentMapper;
 import org.example.projectmanagementapi.repository.AttachmentRepository;
 import org.example.projectmanagementapi.repository.IssueRepository;
 import org.example.projectmanagementapi.repository.TaskRepository;
+import org.example.projectmanagementapi.service.AmazonS3Service;
 import org.example.projectmanagementapi.service.AttachmentService;
 import org.example.projectmanagementapi.service.NotificationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 @Service
@@ -34,21 +28,38 @@ public class AttachmentServiceImpl implements AttachmentService {
   @Value("${cloud.aws.s3.bucket}")
   private String bucketName;
 
+  @Value("${cloud.aws.region.static}")
+  private String region;
+
   private final AttachmentRepository attachmentRepository;
   private final TaskRepository taskRepository;
   private final IssueRepository issueRepository;
   private final NotificationService notificationService;
-  private final S3Client s3Client;
+  private final AmazonS3Service amazonS3Service;
   private final AttachmentMapper attachmentMapper;
 
   @Override
   public AttachmentDto createAttachmentForTask(MultipartFile file, Integer taskId) {
-    return attachmentMapper.toAttachmentDto(createAttachment(file, taskId, true));
+    validateFile(file);
+    Task task =
+        taskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("Task not found"));
+    Attachment attachment = createAndSaveAttachment(file, "tasks/" + taskId);
+    task.addAttachment(attachment);
+    taskRepository.save(task);
+    return attachmentMapper.toAttachmentDto(attachment);
   }
 
   @Override
   public AttachmentDto createAttachmentForIssue(MultipartFile file, Integer issueId) {
-    return attachmentMapper.toAttachmentDto(createAttachment(file, issueId, false));
+    validateFile(file);
+    Issue issue =
+        issueRepository
+            .findById(issueId)
+            .orElseThrow(() -> new RuntimeException("Issue not found"));
+    Attachment attachment = createAndSaveAttachment(file, "issues/" + issueId);
+    issue.addAttachment(attachment);
+    issueRepository.save(issue);
+    return attachmentMapper.toAttachmentDto(attachment);
   }
 
   @Override
@@ -56,105 +67,48 @@ public class AttachmentServiceImpl implements AttachmentService {
     Attachment attachment =
         attachmentRepository
             .findById(attachmentId)
-            .orElseThrow(
-                () -> new RuntimeException("Attachment with id " + attachmentId + " not found"));
-
-    try {
-      DeleteObjectRequest deleteObjectRequest =
-          DeleteObjectRequest.builder()
-              .bucket(bucketName)
-              .key(
-                  "attachments/"
-                      + (attachment.getTask() != null ? "tasks/" : "issues/")
-                      + (attachment.getTask() != null
-                          ? attachment.getTask().getId()
-                          : attachment.getIssue().getId())
-                      + "/"
-                      + attachment.getFileName())
-              .build();
-      s3Client.deleteObject(deleteObjectRequest);
+            .orElseThrow(() -> new RuntimeException("Attachment not found"));
+    String key =
+        "attachments/"
+            + (attachment.getTask() != null ? "tasks/" : "issues/")
+            + (attachment.getTask() != null
+                ? attachment.getTask().getId()
+                : attachment.getIssue().getId())
+            + "/"
+            + attachment.getFileName();
+    if (amazonS3Service.deleteObject(key).sdkHttpResponse().isSuccessful()) {
       attachmentRepository.delete(attachment);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+      notificationService.createNotification("Attachment deleted", NotificationType.DESTRUCTION);
     }
-
-    notificationService.createNotification(
-        "Attachment " + attachmentId + " has been deleted", NotificationType.DESTRUCTION);
   }
 
-  private Attachment createAttachment(MultipartFile file, Integer id, boolean isTask) {
-    if (file.isEmpty()) {
-      throw new RuntimeException("File is empty");
-    }
-
-    if (!checkIfValidFileType(file)) {
-      throw new RuntimeException(
-          "Invalid file type. Accepted file types are: "
-              + Arrays.toString(AcceptedFileType.values()));
-    }
-
+  private Attachment createAndSaveAttachment(MultipartFile file, String path) {
     Attachment attachment =
         Attachment.builder()
             .fileName(file.getOriginalFilename())
             .fileType(file.getContentType())
             .build();
-
-    if (isTask) {
-      Task task =
-          taskRepository
-              .findById(id)
-              .orElseThrow(() -> new RuntimeException("Task with id " + id + " not found"));
-      task.addAttachment(attachment);
-      taskRepository.save(task);
-    } else {
-      Issue issue =
-          issueRepository
-              .findById(id)
-              .orElseThrow(() -> new RuntimeException("Issue with id " + id + " not found"));
-      issue.addAttachment(attachment);
-      issueRepository.save(issue);
-    }
-
-    uploadFileToS3(file, id, isTask, attachment);
-
-    notificationService.createNotification(
-        "Attachment " + attachment.getId() + " has been created", NotificationType.UPDATE);
-
+    uploadFileToS3(file, path, attachment);
+    notificationService.createNotification("Attachment created", NotificationType.UPDATE);
     return attachmentRepository.save(attachment);
   }
 
-  private void uploadFileToS3(
-      MultipartFile file, Integer id, boolean isTask, Attachment attachment) {
-    try {
-      RequestBody requestBody = RequestBody.fromInputStream(file.getInputStream(), file.getSize());
+  private void uploadFileToS3(MultipartFile file, String path, Attachment attachment) {
+    String keyName = "attachments/" + path + "/" + file.getOriginalFilename();
+    PutObjectResponse response = amazonS3Service.uploadObject(file, keyName);
+    attachment.setFilePath(
+        String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, keyName));
+    attachment.setUploadedAt(LocalDate.now());
+  }
 
-      String keyName =
-          "attachments/" + (isTask ? "tasks/" : "issues/") + id + "/" + file.getOriginalFilename();
-
-      PutObjectRequest putObjectRequest =
-          PutObjectRequest.builder()
-              .bucket(bucketName)
-              .key(keyName)
-              .contentType(file.getContentType())
-              .contentLength(file.getSize())
-              .build();
-
-      PutObjectResponse response = s3Client.putObject(putObjectRequest, requestBody);
-
-      attachment.setFilePath("https://" + bucketName + ".s3.amazonaws.com/" + keyName);
-      attachment.setUploadedAt(LocalDate.now());
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+  private void validateFile(MultipartFile file) {
+    if (file.isEmpty() || !isValidFileType(file)) {
+      throw new RuntimeException("Invalid file");
     }
   }
 
-  private boolean checkIfValidFileType(MultipartFile file) {
-    System.out.println(file.getContentType() + "=>" + file.getOriginalFilename());
-    for (AcceptedFileType type : AcceptedFileType.values()) {
-      if (Objects.equals(file.getContentType(), type.getMediaType().toString())) {
-        return true;
-      }
-    }
-    return false;
+  private boolean isValidFileType(MultipartFile file) {
+    return Arrays.stream(AcceptedFileType.values())
+        .anyMatch(type -> type.getMediaType().toString().equals(file.getContentType()));
   }
 }

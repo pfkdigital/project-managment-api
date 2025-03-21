@@ -44,4 +44,8 @@ public class Comment {
   @ManyToOne()
   @JoinColumn(name = "user_id", nullable = false)
   private User author;
+
+  @ManyToOne()
+  @JoinColumn(name ="project_id", nullable = true)
+  private Project project;
 }

@@ -1,5 +1,7 @@
 package org.example.projectmanagementapi.service.impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.response.DetailedTaskDto;
@@ -8,10 +10,13 @@ import org.example.projectmanagementapi.dto.request.TaskRequestDto;
 import org.example.projectmanagementapi.entity.Notification;
 import org.example.projectmanagementapi.entity.Project;
 import org.example.projectmanagementapi.entity.Task;
+import org.example.projectmanagementapi.entity.User;
 import org.example.projectmanagementapi.enums.NotificationType;
+import org.example.projectmanagementapi.enums.TaskStatus;
 import org.example.projectmanagementapi.mapper.TaskMapper;
 import org.example.projectmanagementapi.repository.ProjectRepository;
 import org.example.projectmanagementapi.repository.TaskRepository;
+import org.example.projectmanagementapi.repository.UserRepository;
 import org.example.projectmanagementapi.service.NotificationService;
 import org.example.projectmanagementapi.service.TaskService;
 import org.springframework.stereotype.Service;
@@ -24,6 +29,7 @@ public class TaskServiceImpl implements TaskService {
   private final ProjectRepository projectRepository;
   private final NotificationService notificationService;
   private final TaskMapper taskMapper;
+  private final UserRepository userRepository;
 
   @Override
   public TaskDto createTask(TaskRequestDto taskDto) {
@@ -37,6 +43,8 @@ public class TaskServiceImpl implements TaskService {
             .description(taskDto.getDescription())
             .dueDate(taskDto.getDueDate())
             .priority(taskDto.getPriority())
+            .createdAt(LocalDate.now())
+            .status(TaskStatus.OPEN)
             .build();
 
     project.addTask(task);
@@ -47,6 +55,7 @@ public class TaskServiceImpl implements TaskService {
         Notification.builder()
             .message("Task with id" + newTask.getId() + " has been created")
             .type(NotificationType.CREATION)
+            .createdAt(LocalDate.now())
             .isRead(false)
             .build();
 
@@ -57,18 +66,29 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public DetailedTaskDto getTask(Integer taskId) {
-    Task selectedTask =
-        taskRepository
-            .findById(taskId)
-            .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
-
-    return taskMapper.toDetailedTaskDto(selectedTask);
+    return taskMapper.toDetailedTaskDto(findTaskById(taskId));
   }
 
   @Override
   public List<TaskDto> getTasks() {
     List<Task> tasks = taskRepository.findAll();
     return tasks.stream().map(taskMapper::toTaskDto).toList();
+  }
+
+  @Override
+  public void assignUserToTask(Integer taskId, Integer userId) {
+    User user = findUserById(userId);
+    Task task = findTaskById(taskId);
+
+    user.addTask(task);
+  }
+
+  @Override
+  public void removeUserFromTask(Integer taskId, Integer userId) {
+    User user = findUserById(userId);
+    Task task = findTaskById(taskId);
+
+    user.removeTask(task);
   }
 
   @Override
@@ -113,5 +133,17 @@ public class TaskServiceImpl implements TaskService {
             .build();
 
     notificationService.createNotification(notification);
+  }
+
+  private User findUserById(Integer userId) {
+    return userRepository
+        .findById(userId)
+        .orElseThrow(() -> new IllegalArgumentException("User not found with id " + userId));
+  }
+
+  private Task findTaskById(Integer taskId) {
+    return taskRepository
+        .findById(taskId)
+        .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
   }
 }

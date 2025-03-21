@@ -12,12 +12,12 @@ import org.example.projectmanagementapi.enums.ProjectStatus;
 @NoArgsConstructor
 @Data
 @Builder
-public class ProjectWithUsersDto implements Serializable {
+public class ProjectWithCollaboratorsDto implements Serializable {
   private Integer id;
   private String name;
   private String description;
   private ProjectStatus status;
   private UserDto owner;
   private String displayImageUrl;
-  private List<UserDto> users;
+  private List<UserDto> projectCollaborators;
 }

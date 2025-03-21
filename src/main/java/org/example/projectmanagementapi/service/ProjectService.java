@@ -4,14 +4,14 @@ import java.util.List;
 
 import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
 import org.example.projectmanagementapi.dto.request.ProjectRequestDto;
-import org.example.projectmanagementapi.dto.response.ProjectWithUsersDto;
+import org.example.projectmanagementapi.dto.response.ProjectWithCollaboratorsDto;
 
 public interface ProjectService {
-  ProjectWithUsersDto createProject(ProjectRequestDto projectRequestDto);
+  ProjectWithCollaboratorsDto createProject(ProjectRequestDto projectRequestDto);
 
   DetailedProjectDto getProjectById(Integer projectId);
 
-  List<ProjectWithUsersDto> getAllProjects();
+  List<ProjectWithCollaboratorsDto> getAllProjects();
 
   DetailedProjectDto updateProject(Integer projectId, ProjectRequestDto projectRequestDto);
 

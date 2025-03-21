@@ -16,5 +16,7 @@ public class DetailedCommentDto {
     private String content;
     private LocalDate createdAt;
     private LocalDate updatedAt;
+    private boolean isEdited;
     private UserDto author;
+    private NestedProjectDto project;
 }

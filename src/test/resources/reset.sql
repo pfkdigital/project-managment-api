@@ -1,3 +1,4 @@
+TRUNCATE TABLE comment, attachment, notification, task_user, project_user, task, issue, project, users RESTART IDENTITY CASCADE;
 -- Insert Users
 INSERT INTO users (username, email, password, role, display_image_url, enabled, account_non_expired, account_non_locked, credentials_non_expired) VALUES
                                                                                                                                                       ('admin_user', 'admin@example.com', 'hashed_password_1', 'ADMIN', 'https://example.com/avatar1.png', true, true, true, true),

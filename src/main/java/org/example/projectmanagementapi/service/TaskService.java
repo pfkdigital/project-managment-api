@@ -16,4 +16,8 @@ public interface TaskService {
   DetailedTaskDto getTask(Integer taskId);
 
   List<TaskDto> getTasks();
+
+  void assignUserToTask(Integer taskId, Integer userId);
+
+  void removeUserFromTask(Integer taskId, Integer userId);
 }

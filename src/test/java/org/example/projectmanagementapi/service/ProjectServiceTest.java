@@ -6,7 +6,7 @@ import static org.mockito.Mockito.*;
 import java.util.Optional;
 import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
 import org.example.projectmanagementapi.dto.request.ProjectRequestDto;
-import org.example.projectmanagementapi.dto.response.ProjectWithUsersDto;
+import org.example.projectmanagementapi.dto.response.ProjectWithCollaboratorsDto;
 import org.example.projectmanagementapi.entity.Project;
 import org.example.projectmanagementapi.entity.User;
 import org.example.projectmanagementapi.enums.NotificationType;
@@ -14,7 +14,6 @@ import org.example.projectmanagementapi.enums.ProjectStatus;
 import org.example.projectmanagementapi.mapper.ProjectMapper;
 import org.example.projectmanagementapi.repository.ProjectRepository;
 import org.example.projectmanagementapi.repository.UserRepository;
-import org.example.projectmanagementapi.service.NotificationService;
 import org.example.projectmanagementapi.service.impl.ProjectServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,7 +60,7 @@ public class ProjectServiceTest {
         when(userRepository.findById(any(Integer.class))).thenReturn(Optional.of(user));
         when(projectRepository.save(any(Project.class))).thenReturn(project);
         when(projectMapper.toProjectWithUsersDto(any(Project.class)))
-                .thenReturn(new ProjectWithUsersDto());
+                .thenReturn(new ProjectWithCollaboratorsDto());
 
         projectService.createProject(projectRequestDto);
 

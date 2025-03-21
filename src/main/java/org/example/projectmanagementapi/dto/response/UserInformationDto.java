@@ -14,7 +14,6 @@ import org.example.projectmanagementapi.enums.Role;
 public class UserInformationDto {
   private String username;
   private String email;
-  private String password;
   private Role role;
   private String displayImageUrl;
 }

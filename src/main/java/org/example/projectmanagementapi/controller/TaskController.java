@@ -39,6 +39,20 @@ public class TaskController {
     return new ResponseEntity<>(taskService.updateTask(taskId, taskDto), HttpStatus.OK);
   }
 
+  @PutMapping("/{taskId}/users/{userId}")
+  public ResponseEntity<?> assignUserToTask(
+      @PathVariable Integer taskId, @PathVariable Integer userId) {
+    taskService.assignUserToTask(taskId, userId);
+    return new ResponseEntity<>(HttpStatus.OK);
+  }
+
+  @DeleteMapping("/{taskId}/users/{userId}")
+  public ResponseEntity<?> removeUserFromTask(
+      @PathVariable Integer taskId, @PathVariable Integer userId) {
+    taskService.removeUserFromTask(taskId, userId);
+    return new ResponseEntity<>(HttpStatus.OK);
+  }
+
   @DeleteMapping("/{taskId}")
   public ResponseEntity<?> deleteTask(@PathVariable Integer taskId) {
     taskService.deleteTask(taskId);

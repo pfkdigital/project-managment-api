@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import org.example.projectmanagementapi.dto.request.ProjectRequestDto;
 import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
-import org.example.projectmanagementapi.dto.response.ProjectWithUsersDto;
+import org.example.projectmanagementapi.dto.response.ProjectWithCollaboratorsDto;
 import org.example.projectmanagementapi.service.impl.ProjectServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ public class ProjectControllerTest {
 
     @Test
     void testCreateProject() {
-    ProjectWithUsersDto projectDto = new ProjectWithUsersDto();
+    ProjectWithCollaboratorsDto projectDto = new ProjectWithCollaboratorsDto();
         when(projectService.createProject(any(ProjectRequestDto.class))).thenReturn(projectDto);
 
         ResponseEntity<?> response = projectController.createProject(new ProjectRequestDto());
@@ -43,7 +43,7 @@ public class ProjectControllerTest {
 
     @Test
     void testGetProjects() {
-        List<ProjectWithUsersDto> projects = Collections.emptyList();
+        List<ProjectWithCollaboratorsDto> projects = Collections.emptyList();
         when(projectService.getAllProjects()).thenReturn(projects);
 
         ResponseEntity<?> response = projectController.getAllProjects();

@@ -4,7 +4,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
 import org.example.projectmanagementapi.dto.request.ProjectRequestDto;
-import org.example.projectmanagementapi.dto.response.ProjectWithUsersDto;
+import org.example.projectmanagementapi.dto.response.ProjectWithCollaboratorsDto;
 import org.example.projectmanagementapi.entity.Project;
 import org.example.projectmanagementapi.entity.User;
 import org.example.projectmanagementapi.enums.NotificationType;
@@ -26,7 +26,7 @@ public class ProjectServiceImpl implements ProjectService {
   private final UserRepository userRepository;
 
   @Override
-  public ProjectWithUsersDto createProject(ProjectRequestDto projectRequestDto) {
+  public ProjectWithCollaboratorsDto createProject(ProjectRequestDto projectRequestDto) {
     User owner = findUserById(projectRequestDto.getOwnerId());
     Project newProject =
         Project.builder()
@@ -36,9 +36,7 @@ public class ProjectServiceImpl implements ProjectService {
             .status(ProjectStatus.ACTIVE)
             .build();
 
-    newProject.addUser(owner);
     owner.addOwnedProject(newProject);
-    owner.addProject(newProject);
 
     Project savedProject = projectRepository.save(newProject);
 
@@ -56,7 +54,7 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
-  public List<ProjectWithUsersDto> getAllProjects() {
+  public List<ProjectWithCollaboratorsDto> getAllProjects() {
     List<Project> projects = projectRepository.findAll();
 
     return projects.stream().map(projectMapper::toProjectWithUsersDto).toList();
@@ -65,14 +63,20 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public DetailedProjectDto updateProject(Integer projectId, ProjectRequestDto projectRequestDto) {
 
-    User owner = findUserById(projectRequestDto.getOwnerId());
-
     Project selectedProject = findProjectById(projectId);
     selectedProject.setName(projectRequestDto.getName());
     selectedProject.setDescription(projectRequestDto.getDescription());
     selectedProject.setDisplayImageUrl(projectRequestDto.getDisplayImageUrl());
     selectedProject.setStatus(projectRequestDto.getStatus());
-    owner.addProject(selectedProject);
+
+    User owner = findUserById(projectRequestDto.getOwnerId());
+
+    if (selectedProject.getOwner().getId() != projectRequestDto.getOwnerId()) {
+      selectedProject.removeUser(selectedProject.getOwner());
+      selectedProject.getOwner().removeOwnedProject(selectedProject);
+      owner.addOwnedProject(selectedProject);
+      selectedProject.addUser(owner);
+    }
 
     Project updatedProject = projectRepository.save(selectedProject);
 

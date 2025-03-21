@@ -21,6 +21,5 @@ public class TaskDto {
   private PriorityStatus priority;
   private TaskStatus status;
   private NestedProjectDto project;
-  private List<UserDto> assignedUsers;
   private List<UserDto> users;
 }

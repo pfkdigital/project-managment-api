@@ -20,7 +20,7 @@ public class DetailedTaskDto {
     private LocalDate dueDate;
     private PriorityStatus priority;
     private TaskStatus status;
-    private List<UserDto> assignedUsers;
+    private List<UserDto> users;
     private List<AttachmentDto> attachments;
     private List<CommentDto> comments;
 }

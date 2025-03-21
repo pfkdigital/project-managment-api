@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.request.ProjectRequestDto;
 import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
-import org.example.projectmanagementapi.dto.response.ProjectWithUsersDto;
+import org.example.projectmanagementapi.dto.response.ProjectWithCollaboratorsDto;
 import org.example.projectmanagementapi.service.impl.ProjectServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +19,7 @@ public class ProjectController {
   private final ProjectServiceImpl projectService;
 
   @PostMapping
-  public ResponseEntity<ProjectWithUsersDto> createProject(
+  public ResponseEntity<ProjectWithCollaboratorsDto> createProject(
       @Valid @RequestBody ProjectRequestDto projectRequestDto) {
     return new ResponseEntity<>(
         projectService.createProject(projectRequestDto), HttpStatus.CREATED);
@@ -31,7 +31,7 @@ public class ProjectController {
   }
 
   @GetMapping
-  public ResponseEntity<List<ProjectWithUsersDto>> getAllProjects() {
+  public ResponseEntity<List<ProjectWithCollaboratorsDto>> getAllProjects() {
     return new ResponseEntity<>(projectService.getAllProjects(), HttpStatus.OK);
   }
 
@@ -42,14 +42,14 @@ public class ProjectController {
         projectService.updateProject(projectId, projectRequestDto), HttpStatus.OK);
   }
 
-  @PutMapping("/{projectId}/members/{userId}")
+  @PutMapping("/{projectId}/users/{userId}")
   public ResponseEntity<DetailedProjectDto> addProjectMember(
       @PathVariable Integer projectId, @PathVariable Integer userId) {
     projectService.addProjectMember(projectId, userId);
     return new ResponseEntity<>(HttpStatus.OK);
   }
 
-  @DeleteMapping("/{projectId}/members/{userId}")
+  @DeleteMapping("/{projectId}/users/{userId}")
   public ResponseEntity<DetailedProjectDto> removeProjectMember(
       @PathVariable Integer projectId, @PathVariable Integer userId) {
     projectService.removeProjectMember(projectId, userId);

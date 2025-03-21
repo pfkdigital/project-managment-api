@@ -61,11 +61,13 @@ public class User implements UserDetails {
   @JsonIgnore
   private PasswordResetToken passwordResetToken;
 
-  @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
+  @OneToMany(
+      mappedBy = "owner",
+      cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
   @ToString.Exclude
   private List<Project> ownedProjects;
 
-  @ManyToMany(mappedBy = "users")
+  @ManyToMany(mappedBy = "projectCollaborators")
   @ToString.Exclude
   private List<Project> projects;
 
@@ -101,12 +103,21 @@ public class User implements UserDetails {
     project.setOwner(this);
   }
 
+  public void removeOwnedProject(Project project) {
+    if (projects == null) {
+      return;
+    }
+    ownedProjects.remove(project);
+    projects.remove(project);
+    project.setOwner(null);
+  }
+
   public void addProject(Project project) {
     if (projects == null) {
       projects = new ArrayList<>();
     }
     projects.add(project);
-    project.getUsers().add(this);
+    project.getProjectCollaborators().add(this);
   }
 
   public void addTask(Task task) {
@@ -115,6 +126,13 @@ public class User implements UserDetails {
     }
     tasks.add(task);
     task.getUsers().add(this);
+  }
+
+  public void removeTask(Task task) {
+    if (tasks != null) {
+      tasks.remove(task);
+      task.getUsers().remove(this);
+    }
   }
 
   public void addReportedIssue(Issue issue) {

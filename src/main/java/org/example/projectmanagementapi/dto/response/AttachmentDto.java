@@ -17,7 +17,5 @@ public class AttachmentDto {
     private String filePath;
     private String fileType;
     private LocalDate uploadedAt;
-    private Integer issueId;
-    private Integer taskId;
     private UserDto author;
 }

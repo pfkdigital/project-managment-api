@@ -15,7 +15,6 @@ public class UserDto implements Serializable {
   private Integer id;
   private String username;
   private String email;
-  private String password;
   private Role role;
   private String displayImageUrl;
 }

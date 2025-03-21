@@ -21,5 +21,6 @@ public class DetailedProjectDto implements Serializable {
     private String displayImageUrl;
     private List<UserDto> users;
     private List<TaskDto> tasks;
-    private List<DetailedIssueDto> issues;
+    private List<IssueDto> issues;
+    private List<CommentDto> comments;
 }
