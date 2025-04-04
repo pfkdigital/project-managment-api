@@ -12,7 +12,6 @@ import org.example.projectmanagementapi.enums.ProjectStatus;
 @Getter
 @Setter
 @Builder
-@ToString
 public class Project {
 
   @Id
@@ -38,32 +37,28 @@ public class Project {
 
   @ManyToMany()
   @JoinTable(
-      name = "project_user",
+      name = "project_collaborators",
       joinColumns = @JoinColumn(name = "project_id"),
-      inverseJoinColumns = @JoinColumn(name = "user_id"))
-  @ToString.Exclude
-  private List<User> projectCollaborators;
+      inverseJoinColumns = @JoinColumn(name = "collaborator_id"))
+  private List<User> collaborators;
 
-  @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL,orphanRemoval = true)
   private List<Task> tasks;
 
-  @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL,orphanRemoval = true)
   private List<Issue> issues;
 
-  @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-  private List<Comment> comments;
-
   public void addUser(User user) {
-    if (projectCollaborators == null) {
-      projectCollaborators = new ArrayList<>();
+    if (collaborators == null) {
+      collaborators = new ArrayList<>();
     }
-    projectCollaborators.add(user);
+    collaborators.add(user);
     user.getProjects().add(this);
   }
 
   public void removeUser(User user) {
-    if (projectCollaborators != null) {
-      projectCollaborators.remove(user);
+    if (collaborators != null) {
+      collaborators.remove(user);
       user.getProjects().remove(this);
     }
   }

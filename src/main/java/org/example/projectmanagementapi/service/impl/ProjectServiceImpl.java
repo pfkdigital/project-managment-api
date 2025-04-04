@@ -43,7 +43,7 @@ public class ProjectServiceImpl implements ProjectService {
     notificationService.createNotification(
         "Project " + savedProject.getName() + " has been created", NotificationType.CREATION);
 
-    return projectMapper.toProjectWithUsersDto(savedProject);
+    return projectMapper.toProjectWithCollaborators(savedProject);
   }
 
   @Override
@@ -57,7 +57,7 @@ public class ProjectServiceImpl implements ProjectService {
   public List<ProjectWithCollaboratorsDto> getAllProjects() {
     List<Project> projects = projectRepository.findAll();
 
-    return projects.stream().map(projectMapper::toProjectWithUsersDto).toList();
+    return projects.stream().map(projectMapper::toProjectWithCollaborators).toList();
   }
 
   @Override

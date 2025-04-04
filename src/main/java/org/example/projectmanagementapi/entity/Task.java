@@ -49,11 +49,11 @@ public class Task {
   @ToString.Exclude
   private List<User> users;
 
-  @OneToMany(mappedBy = "task")
+  @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
   @ToString.Exclude
   private List<Comment> comments;
 
-  @OneToMany(mappedBy = "task")
+  @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
   @ToString.Exclude
   private List<Attachment> attachments;
 

@@ -1,6 +1,7 @@
 package org.example.projectmanagementapi.dto.response;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,5 +20,5 @@ public class ProjectWithCollaboratorsDto implements Serializable {
   private ProjectStatus status;
   private UserDto owner;
   private String displayImageUrl;
-  private List<UserDto> projectCollaborators;
+  private List<UserDto> collaborators;
 }

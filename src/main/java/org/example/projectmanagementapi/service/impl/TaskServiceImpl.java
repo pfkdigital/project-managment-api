@@ -130,6 +130,7 @@ public class TaskServiceImpl implements TaskService {
             .message("Task with id " + taskId + " has been deleted")
             .type(NotificationType.DESTRUCTION)
             .isRead(false)
+            .createdAt(LocalDate.now())
             .build();
 
     notificationService.createNotification(notification);

@@ -9,7 +9,7 @@ import org.mapstruct.*;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface ProjectMapper {
 
-  ProjectWithCollaboratorsDto toProjectWithUsersDto(Project entity);
+  ProjectWithCollaboratorsDto toProjectWithCollaborators(Project entity);
 
   DetailedProjectDto toDetailedProjectDto(Project entity);
 

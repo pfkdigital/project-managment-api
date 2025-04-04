@@ -42,14 +42,14 @@ public class ProjectController {
         projectService.updateProject(projectId, projectRequestDto), HttpStatus.OK);
   }
 
-  @PutMapping("/{projectId}/users/{userId}")
+  @PatchMapping("/{projectId}/collaborators/{userId}")
   public ResponseEntity<DetailedProjectDto> addProjectMember(
       @PathVariable Integer projectId, @PathVariable Integer userId) {
     projectService.addProjectMember(projectId, userId);
     return new ResponseEntity<>(HttpStatus.OK);
   }
 
-  @DeleteMapping("/{projectId}/users/{userId}")
+  @DeleteMapping("/{projectId}/collaborators/{userId}")
   public ResponseEntity<DetailedProjectDto> removeProjectMember(
       @PathVariable Integer projectId, @PathVariable Integer userId) {
     projectService.removeProjectMember(projectId, userId);

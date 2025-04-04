@@ -67,7 +67,7 @@ public class User implements UserDetails {
   @ToString.Exclude
   private List<Project> ownedProjects;
 
-  @ManyToMany(mappedBy = "projectCollaborators")
+  @ManyToMany(mappedBy = "collaborators")
   @ToString.Exclude
   private List<Project> projects;
 
@@ -110,14 +110,6 @@ public class User implements UserDetails {
     ownedProjects.remove(project);
     projects.remove(project);
     project.setOwner(null);
-  }
-
-  public void addProject(Project project) {
-    if (projects == null) {
-      projects = new ArrayList<>();
-    }
-    projects.add(project);
-    project.getProjectCollaborators().add(this);
   }
 
   public void addTask(Task task) {

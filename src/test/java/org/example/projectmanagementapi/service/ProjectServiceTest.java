@@ -59,7 +59,7 @@ public class ProjectServiceTest {
     void testCreateProject() {
         when(userRepository.findById(any(Integer.class))).thenReturn(Optional.of(user));
         when(projectRepository.save(any(Project.class))).thenReturn(project);
-        when(projectMapper.toProjectWithUsersDto(any(Project.class)))
+        when(projectMapper.toProjectWithCollaborators(any(Project.class)))
                 .thenReturn(new ProjectWithCollaboratorsDto());
 
         projectService.createProject(projectRequestDto);

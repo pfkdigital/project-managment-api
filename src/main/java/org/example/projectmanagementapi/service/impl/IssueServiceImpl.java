@@ -40,6 +40,7 @@ public class IssueServiceImpl implements IssueService {
             .priorityStatus(issueRequestDto.getPriorityStatus())
             .reportedBy(reportedByUser)
             .assignedTo(assignedToUser)
+            .status(issueRequestDto.getStatus())
             .build();
 
     project.addIssue(newIssue);

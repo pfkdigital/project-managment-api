@@ -39,7 +39,7 @@ public class TaskController {
     return new ResponseEntity<>(taskService.updateTask(taskId, taskDto), HttpStatus.OK);
   }
 
-  @PutMapping("/{taskId}/users/{userId}")
+  @PatchMapping("/{taskId}/users/{userId}")
   public ResponseEntity<?> assignUserToTask(
       @PathVariable Integer taskId, @PathVariable Integer userId) {
     taskService.assignUserToTask(taskId, userId);

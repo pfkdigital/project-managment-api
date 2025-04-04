@@ -35,8 +35,8 @@ INSERT INTO task_user (task_id, user_id) VALUES
                                              (4, 5),
                                              (5, 4);
 
--- Assign Users to Projects
-INSERT INTO project_user (project_id, user_id) VALUES
+-- Assign Collaborators to Projects
+INSERT INTO project_collaborators (project_id, collaborator_id) VALUES
                                                    (1, 2),
                                                    (1, 3),
                                                    (2, 3),
@@ -45,12 +45,12 @@ INSERT INTO project_user (project_id, user_id) VALUES
                                                    (3, 5);
 
 -- Insert Comments
-INSERT INTO comment (content, created_at, updated_at, task_id, issue_id, user_id, project_id, is_edited) VALUES
-                                                                                                             ('This task is almost done.', '2025-02-15', NULL, 1, NULL, 2, NULL, false),
-                                                                                                             ('We need more details.', '2025-02-16', '2025-02-17', NULL, 1, 3, NULL, true),
-                                                                                                             ('Working on invoice modal, will push PR tomorrow.', '2025-02-18', NULL, 3, NULL, 4, NULL, false),
-                                                                                                             ('Investigating why export fails on Safari.', '2025-02-19', NULL, NULL, 3, 4, NULL, false),
-                                                                                                             ('Real-time sync improved after WebSocket refactor.', '2025-02-20', NULL, 4, NULL, 5, NULL, false);
+INSERT INTO comment (content, created_at, updated_at, task_id, issue_id, user_id, is_edited) VALUES
+                                                                                                             ('This task is almost done.', '2025-02-15', NULL, 1, NULL, 2, false),
+                                                                                                             ('We need more details.', '2025-02-16', '2025-02-17', NULL, 1, 3, true),
+                                                                                                             ('Working on invoice modal, will push PR tomorrow.', '2025-02-18', NULL, 3, NULL, 4, false),
+                                                                                                             ('Investigating why export fails on Safari.', '2025-02-19', NULL, NULL, 3, 4, false),
+                                                                                                             ('Real-time sync improved after WebSocket refactor.', '2025-02-20', NULL, 4, NULL, 5, false);
 
 -- Insert Attachments
 INSERT INTO attachment (file_name, file_path, file_type, uploaded_at, task_id, issue_id, author_id) VALUES
