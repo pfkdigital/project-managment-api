@@ -3,6 +3,7 @@ package org.example.projectmanagementapi.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.request.CommentRequestDto;
+import org.example.projectmanagementapi.dto.request.CommentUpdateRequest;
 import org.example.projectmanagementapi.dto.response.CommentDto;
 import org.example.projectmanagementapi.service.impl.CommentServiceImpl;
 import org.springframework.http.HttpStatus;
@@ -35,7 +36,7 @@ public class CommentController {
 
   @PutMapping("/{commentId}")
   public ResponseEntity<CommentDto> updateComment(
-      @PathVariable Integer commentId, @Valid @RequestBody CommentRequestDto comment) {
+      @PathVariable Integer commentId, @Valid @RequestBody CommentUpdateRequest comment) {
     return new ResponseEntity<>(commentService.updateComment(commentId, comment), HttpStatus.OK);
   }
 

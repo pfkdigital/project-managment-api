@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.request.CommentRequestDto;
+import org.example.projectmanagementapi.dto.request.CommentUpdateRequest;
 import org.example.projectmanagementapi.dto.response.CommentDto;
 import org.example.projectmanagementapi.entity.*;
 import org.example.projectmanagementapi.enums.NotificationType;
@@ -31,26 +32,24 @@ public class CommentServiceImpl implements CommentService {
   @Override
   public CommentDto createComment(CommentRequestDto comment) {
     User author = findUserById(comment.getAuthorId());
-    Issue issue = findIssueById(comment.getIssueId());
-    Task task = findTaskById(comment.getTaskId());
 
     Comment newComment =
         Comment.builder()
             .content(comment.getContent())
             .createdAt(LocalDate.now())
             .author(author)
-            .issue(issue)
-            .task(task)
             .isEdited(false)
             .build();
 
     author.addComment(newComment);
 
-    if (issue != null) {
+    if (comment.getIssueId() != null) {
+      Issue issue = findIssueById(comment.getIssueId());
       issue.addComment(newComment);
     }
 
-    if (task != null) {
+    if (comment.getTaskId() != null) {
+      Task task = findTaskById(comment.getTaskId());
       task.addComment(newComment);
     }
 
@@ -73,22 +72,30 @@ public class CommentServiceImpl implements CommentService {
   }
 
   @Override
-  public CommentDto updateComment(Integer commentId, CommentRequestDto comment) {
-    User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+  public CommentDto updateComment(Integer commentId, CommentUpdateRequest comment) {
 
-    if (!currentUser.getId().equals(comment.getAuthorId())) {
-      throw new IllegalArgumentException("You can only update your own comments");
-    }
+//    System.out.println(SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+//    User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+//
+//    if (currentUser == null) {
+//      throw new IllegalArgumentException("User not found");
+//    }
+//
+//    if (!currentUser.getId().equals(comment.getAuthorId())) {
+//      throw new IllegalArgumentException("You can only update your own comments");
+//    }
 
     Comment existingComment = findCommentById(commentId);
     existingComment.setContent(comment.getContent());
     existingComment.setUpdatedAt(LocalDate.now());
     existingComment.setIsEdited(true);
 
-    notificationService.createNotification(
-        "Comment " + existingComment.getId() + " has been updated", NotificationType.UPDATE);
+    Comment updatedComment = commentRepository.save(existingComment);
 
-    return commentMapper.toDto(commentRepository.save(existingComment));
+    notificationService.createNotification(
+            "Comment " + existingComment.getId() + " has been updated", NotificationType.UPDATE);
+
+    return commentMapper.toDto(updatedComment);
   }
 
   @Override

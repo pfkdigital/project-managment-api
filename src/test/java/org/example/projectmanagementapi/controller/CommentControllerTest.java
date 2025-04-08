@@ -8,6 +8,7 @@ import static org.mockito.Mockito.*;
 import java.util.Collections;
 import java.util.List;
 import org.example.projectmanagementapi.dto.request.CommentRequestDto;
+import org.example.projectmanagementapi.dto.request.CommentUpdateRequest;
 import org.example.projectmanagementapi.dto.response.CommentDto;
 import org.example.projectmanagementapi.service.impl.CommentServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,9 +66,10 @@ public class CommentControllerTest {
   @Test
   void testUpdateComment() {
     CommentDto commentDto = new CommentDto();
-    when(commentService.updateComment(anyInt(), any(CommentRequestDto.class))).thenReturn(commentDto);
+    when(commentService.updateComment(anyInt(), any(CommentUpdateRequest.class)))
+        .thenReturn(commentDto);
 
-    ResponseEntity<?> response = commentController.updateComment(1, new CommentRequestDto());
+    ResponseEntity<?> response = commentController.updateComment(1, new CommentUpdateRequest());
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(commentDto, response.getBody());

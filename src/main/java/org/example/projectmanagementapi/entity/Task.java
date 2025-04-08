@@ -46,15 +46,12 @@ public class Task {
       name = "task_user",
       joinColumns = @JoinColumn(name = "task_id"),
       inverseJoinColumns = @JoinColumn(name = "user_id"))
-  @ToString.Exclude
   private List<User> users;
 
   @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
-  @ToString.Exclude
   private List<Comment> comments;
 
   @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
-  @ToString.Exclude
   private List<Attachment> attachments;
 
   public void addAttachment(Attachment attachment) {

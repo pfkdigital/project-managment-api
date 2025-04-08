@@ -2,6 +2,7 @@ package org.example.projectmanagementapi.service;
 
 import java.util.List;
 import org.example.projectmanagementapi.dto.request.CommentRequestDto;
+import org.example.projectmanagementapi.dto.request.CommentUpdateRequest;
 import org.example.projectmanagementapi.dto.response.CommentDto;
 
 public interface CommentService {
@@ -11,7 +12,7 @@ public interface CommentService {
 
   List<CommentDto> getComments();
 
-  CommentDto updateComment(Integer commentId, CommentRequestDto comment);
+  CommentDto updateComment(Integer commentId, CommentUpdateRequest comment);
 
   void deleteComment(Integer commentId);
 }

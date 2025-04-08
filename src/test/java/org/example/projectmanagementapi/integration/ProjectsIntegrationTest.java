@@ -32,7 +32,7 @@ public class ProjectsIntegrationTest extends BaseIntegration {
 
     ProjectWithCollaboratorsDto response =
         restTemplate.postForObject(url, projectRequestDto, ProjectWithCollaboratorsDto.class);
-    System.out.println(response);
+
     assertNotNull(response);
     assertEquals("Test Project", response.getName());
     assertEquals("Test Description", response.getDescription());
@@ -42,6 +42,7 @@ public class ProjectsIntegrationTest extends BaseIntegration {
   @Sql({"/schema.sql", "/data.sql"})
   public void testGetAllProjects() {
     String url = "http://localhost:" + port + "/api/v1/projects";
+
     ProjectWithCollaboratorsDto[] projects =
         restTemplate.getForObject(url, ProjectWithCollaboratorsDto[].class);
 
@@ -54,6 +55,7 @@ public class ProjectsIntegrationTest extends BaseIntegration {
   @Sql({"/schema.sql", "/data.sql"})
   public void testGetProjectById() {
     String url = "http://localhost:" + port + "/api/v1/projects/1";
+
     DetailedProjectDto projectDto = restTemplate.getForObject(url, DetailedProjectDto.class);
 
     assertNotNull(projectDto);
@@ -64,6 +66,7 @@ public class ProjectsIntegrationTest extends BaseIntegration {
   @Sql({"/schema.sql", "/data.sql"})
   public void testGetByProjectIdWhenProjectDoesNotExist() {
     String url = "http://localhost:" + port + "/api/v1/projects/100";
+
     DetailedProjectDto projectDto = restTemplate.getForObject(url, DetailedProjectDto.class);
 
     assertNotNull(projectDto);
@@ -74,6 +77,7 @@ public class ProjectsIntegrationTest extends BaseIntegration {
   @Sql({"/schema.sql", "/data.sql"})
   public void testUpdateProject() {
     String url = "http://localhost:" + port + "/api/v1/projects/1";
+
     ProjectRequestDto projectRequestDto = new ProjectRequestDto();
     projectRequestDto.setName("Updated Project");
     projectRequestDto.setDescription("Updated Description");
@@ -96,6 +100,7 @@ public class ProjectsIntegrationTest extends BaseIntegration {
   @Sql({"/schema.sql", "/data.sql"})
   public void testDeleteProject() {
     String url = "http://localhost:" + port + "/api/v1/projects/1";
+
     ProjectWithCollaboratorsDto[] projectsBeforeDelete =
         restTemplate.getForObject(
             "http://localhost:" + port + "/api/v1/projects", ProjectWithCollaboratorsDto[].class);
@@ -115,6 +120,7 @@ public class ProjectsIntegrationTest extends BaseIntegration {
   public void testAddProjectMember() {
     String patchUrl = "http://localhost:" + port + "/api/v1/projects/1/collaborators/2";
     String getUrl = "http://localhost:" + port + "/api/v1/projects/1";
+
     restTemplate.patchForObject(patchUrl, null, DetailedProjectDto.class);
 
     DetailedProjectDto projectDto = restTemplate.getForObject(getUrl, DetailedProjectDto.class);
@@ -128,6 +134,7 @@ public class ProjectsIntegrationTest extends BaseIntegration {
   public void testRemoveProjectMember() {
     String patchUrl = "http://localhost:" + port + "/api/v1/projects/1/collaborators/2";
     String getUrl = "http://localhost:" + port + "/api/v1/projects/1";
+
     restTemplate.delete(patchUrl,null,Void.class);
 
     DetailedProjectDto projectDto = restTemplate.getForObject(getUrl, DetailedProjectDto.class);

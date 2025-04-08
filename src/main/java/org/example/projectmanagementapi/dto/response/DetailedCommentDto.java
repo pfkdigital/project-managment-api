@@ -18,5 +18,4 @@ public class DetailedCommentDto {
     private LocalDate updatedAt;
     private boolean isEdited;
     private UserDto author;
-    private NestedProjectDto project;
 }
