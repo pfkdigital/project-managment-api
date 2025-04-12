@@ -30,6 +30,7 @@ public class AmazonS3ServiceImpl implements AmazonS3Service {
       PutObjectRequest request =
           PutObjectRequest.builder()
               .key(keyName)
+              .bucket(bucketName)
               .contentType(file.getContentType())
               .contentLength(file.getSize())
               .build();

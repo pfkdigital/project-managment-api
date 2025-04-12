@@ -87,9 +87,9 @@ public class IssuesIntegrationTest extends BaseIntegration {
     restTemplate.delete(url);
 
     // Verify that the issue is deleted by trying to fetch it
-    IssueDto issueDto = restTemplate.getForObject(url, IssueDto.class);
+    ApiError issueDto = restTemplate.getForObject(url, ApiError.class);
     assertNotNull(issueDto);
-    assertEquals(null, issueDto.getTitle());
+    assertEquals("Issue with id 1 not found", issueDto.getMessage());
   }
 
   @Test

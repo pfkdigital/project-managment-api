@@ -5,6 +5,7 @@ import org.example.projectmanagementapi.dto.response.DetailedTaskDto;
 import org.example.projectmanagementapi.dto.response.TaskDto;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 import org.example.projectmanagementapi.enums.TaskStatus;
+import org.example.projectmanagementapi.exception.ApiError;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -87,9 +88,9 @@ public class TaskIntegrationTest extends BaseIntegration {
     String url = "http://localhost:" + port + "/api/v1/tasks/1";
     restTemplate.delete(url);
 
-    TaskDto taskDto = restTemplate.getForObject(url, TaskDto.class);
+    ApiError taskDto = restTemplate.getForObject(url, ApiError.class);
     assertNotNull(taskDto);
-    assertEquals(null, taskDto.getDescription());
+    assertEquals("Task not found with id 1", taskDto.getMessage());
   }
 
   @Test
@@ -122,10 +123,10 @@ public class TaskIntegrationTest extends BaseIntegration {
   @Sql({"/schema.sql", "/data.sql"})
   public void testGetByTaskIdWhenTaskDoesNotExist() {
     String url = "http://localhost:" + port + "/api/v1/tasks/100";
-    TaskDto taskDto = restTemplate.getForObject(url, TaskDto.class);
+    ApiError taskDto = restTemplate.getForObject(url, ApiError.class);
 
     assertNotNull(taskDto);
-    assertEquals(null, taskDto.getDescription());
+    assertEquals("Task not found with id 100", taskDto.getMessage());
   }
 
   @Test

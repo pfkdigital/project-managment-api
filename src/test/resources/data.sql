@@ -59,3 +59,10 @@ INSERT INTO attachment (file_name, file_path, file_type, uploaded_at, task_id, i
                                                                                                         ('invoice_modal_wireframe.pdf', '/uploads/invoice_modal_wireframe.pdf', 'application/pdf', '2025-02-18', 3, NULL, 4),
                                                                                                         ('sync_test_report.xlsx', '/uploads/sync_test_report.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '2025-02-20', 4, NULL, 5);
 
+-- Insert Notifications
+INSERT INTO notification (type, message, is_read, created_at) VALUES
+                                                                  ('UPDATE', 'Your task has been updated.', false, '2023-10-01'),
+                                                                  ('UPDATE', 'Deadline is approaching for your project.', false, '2023-10-02'),
+                                                                  ('ASSIGNMENT', 'Failed to assign the task to the user.', true, '2023-10-03'),
+                                                                  ('CREATION', 'New comment added to your issue.', false, '2023-10-04'),
+                                                                  ('COMPLETION', 'Your issue has been resolved.', true, '2023-10-05');

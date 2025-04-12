@@ -105,9 +105,9 @@ CREATE TABLE task_user (
 
 -- Add foreign keys
 ALTER TABLE attachment
-    ADD CONSTRAINT fk_attachment_author FOREIGN KEY (author_id) REFERENCES users,
-    ADD CONSTRAINT fk_attachment_issue FOREIGN KEY (issue_id) REFERENCES task,
-    ADD CONSTRAINT fk_attachment_task FOREIGN KEY (task_id) REFERENCES issue;
+    ADD CONSTRAINT fk_attachment_author FOREIGN KEY (author_id) REFERENCES users(id),
+    ADD CONSTRAINT fk_attachment_issue FOREIGN KEY (issue_id) REFERENCES issue(id),
+    ADD CONSTRAINT fk_attachment_task FOREIGN KEY (task_id) REFERENCES task(id);
 
 ALTER TABLE comment
     ADD CONSTRAINT fk_comment_user FOREIGN KEY (user_id) REFERENCES users,

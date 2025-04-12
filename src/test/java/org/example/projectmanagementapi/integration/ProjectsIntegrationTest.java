@@ -4,6 +4,7 @@ import org.example.projectmanagementapi.dto.request.ProjectRequestDto;
 import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
 import org.example.projectmanagementapi.dto.response.ProjectWithCollaboratorsDto;
 import org.example.projectmanagementapi.enums.ProjectStatus;
+import org.example.projectmanagementapi.exception.ApiError;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -67,10 +68,10 @@ public class ProjectsIntegrationTest extends BaseIntegration {
   public void testGetByProjectIdWhenProjectDoesNotExist() {
     String url = "http://localhost:" + port + "/api/v1/projects/100";
 
-    DetailedProjectDto projectDto = restTemplate.getForObject(url, DetailedProjectDto.class);
+    ApiError projectDto = restTemplate.getForObject(url, ApiError.class);
 
     assertNotNull(projectDto);
-    assertEquals(null, projectDto.getName());
+    assertEquals("Project not found of id 100", projectDto.getMessage());
   }
 
   @Test

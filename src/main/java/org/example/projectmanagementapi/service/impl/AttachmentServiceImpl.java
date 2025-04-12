@@ -7,16 +7,19 @@ import org.example.projectmanagementapi.dto.response.AttachmentDto;
 import org.example.projectmanagementapi.entity.Attachment;
 import org.example.projectmanagementapi.entity.Issue;
 import org.example.projectmanagementapi.entity.Task;
+import org.example.projectmanagementapi.entity.User;
 import org.example.projectmanagementapi.enums.AcceptedFileType;
 import org.example.projectmanagementapi.enums.NotificationType;
 import org.example.projectmanagementapi.mapper.AttachmentMapper;
 import org.example.projectmanagementapi.repository.AttachmentRepository;
 import org.example.projectmanagementapi.repository.IssueRepository;
 import org.example.projectmanagementapi.repository.TaskRepository;
+import org.example.projectmanagementapi.repository.UserRepository;
 import org.example.projectmanagementapi.service.AmazonS3Service;
 import org.example.projectmanagementapi.service.AttachmentService;
 import org.example.projectmanagementapi.service.NotificationService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
@@ -37,6 +40,8 @@ public class AttachmentServiceImpl implements AttachmentService {
   private final NotificationService notificationService;
   private final AmazonS3Service amazonS3Service;
   private final AttachmentMapper attachmentMapper;
+  private final UserRepository
+      userRepository; // Temoprary fix for the missing user in Attachment entity
 
   @Override
   public AttachmentDto createAttachmentForTask(MultipartFile file, Integer taskId) {
@@ -83,10 +88,15 @@ public class AttachmentServiceImpl implements AttachmentService {
   }
 
   private Attachment createAndSaveAttachment(MultipartFile file, String path) {
+    // User currentUser = (User)
+    // SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    User user =
+        userRepository.findById(1).orElseThrow(() -> new RuntimeException("User not found"));
     Attachment attachment =
         Attachment.builder()
             .fileName(file.getOriginalFilename())
             .fileType(file.getContentType())
+            .author(user)
             .build();
     uploadFileToS3(file, path, attachment);
     notificationService.createNotification("Attachment created", NotificationType.UPDATE);
