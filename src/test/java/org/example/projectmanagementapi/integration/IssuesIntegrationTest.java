@@ -6,14 +6,13 @@ import org.example.projectmanagementapi.dto.response.IssueDto;
 import org.example.projectmanagementapi.enums.IssueStatus;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 import org.example.projectmanagementapi.exception.ApiError;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.jdbc.Sql;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class IssuesIntegrationTest extends BaseIntegration {
   @Autowired private TestRestTemplate restTemplate;
@@ -39,8 +38,8 @@ public class IssuesIntegrationTest extends BaseIntegration {
     IssueDto response = restTemplate.postForObject(url, issueRequestDto, IssueDto.class);
 
     // Assertions to verify the response
-    assertNotNull(response);
-    assertEquals("Test Issue", response.getTitle());
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals("Test Issue", response.getTitle());
   }
 
   @Test
@@ -50,9 +49,9 @@ public class IssuesIntegrationTest extends BaseIntegration {
     IssueDto[] issues = restTemplate.getForObject(url, IssueDto[].class);
 
     // Assertions to verify the response
-    assertNotNull(issues);
-    assertEquals(4, issues.length);
-    assertEquals("Bug Fix A", issues[0].getTitle());
+    Assertions.assertNotNull(issues);
+    Assertions.assertEquals(4, issues.length);
+    Assertions.assertEquals("Bug Fix A", issues[0].getTitle());
   }
 
   @Test
@@ -62,8 +61,8 @@ public class IssuesIntegrationTest extends BaseIntegration {
     DetailedIssueDto issueDto = restTemplate.getForObject(url, DetailedIssueDto.class);
     System.out.println(issueDto);
     // Assertions to verify the response
-    assertNotNull(issueDto);
-    assertEquals("Bug Fix A", issueDto.getTitle());
+    Assertions.assertNotNull(issueDto);
+    Assertions.assertEquals("Bug Fix A", issueDto.getTitle());
   }
 
   @Test
@@ -74,8 +73,8 @@ public class IssuesIntegrationTest extends BaseIntegration {
 
     ApiError error = restTemplate.getForObject(url, ApiError.class);
     // Assertions to verify the response
-    assertNotNull(error);
-    assertEquals(errorMessage, error.getMessage());
+    Assertions.assertNotNull(error);
+    Assertions.assertEquals(errorMessage, error.getMessage());
   }
 
   @Test
@@ -88,8 +87,8 @@ public class IssuesIntegrationTest extends BaseIntegration {
 
     // Verify that the issue is deleted by trying to fetch it
     ApiError issueDto = restTemplate.getForObject(url, ApiError.class);
-    assertNotNull(issueDto);
-    assertEquals("Issue with id 1 not found", issueDto.getMessage());
+    Assertions.assertNotNull(issueDto);
+    Assertions.assertEquals("Issue with id 1 not found", issueDto.getMessage());
   }
 
   @Test
@@ -114,7 +113,7 @@ public class IssuesIntegrationTest extends BaseIntegration {
     DetailedIssueDto response = restTemplate.getForObject(url, DetailedIssueDto.class);
 
     // Assertions to verify the response
-    assertNotNull(response);
-    assertEquals("Updated Issue", response.getTitle());
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals("Updated Issue", response.getTitle());
   }
 }

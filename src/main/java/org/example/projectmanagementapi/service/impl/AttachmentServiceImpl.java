@@ -105,7 +105,7 @@ public class AttachmentServiceImpl implements AttachmentService {
 
   private void uploadFileToS3(MultipartFile file, String path, Attachment attachment) {
     String keyName = "attachments/" + path + "/" + file.getOriginalFilename();
-    PutObjectResponse response = amazonS3Service.uploadObject(file, keyName);
+    amazonS3Service.uploadObject(file, keyName);
     attachment.setFilePath(
         String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, keyName));
     attachment.setUploadedAt(LocalDate.now());

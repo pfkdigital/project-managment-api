@@ -12,15 +12,15 @@ services:
     networks:
       - backend
   redis:
-    image: 'redis:latest'
+    image: redis:latest
+    container_name: redis_server
     ports:
-      - '6379:6379'
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes
-      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
-    networks:
-      - backend
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
 networks:
   backend:
 volumes:
   postgres_data:
+  redis_data:

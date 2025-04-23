@@ -6,27 +6,34 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.example.projectmanagementapi.dto.response.AttachmentDto;
 import org.example.projectmanagementapi.service.AttachmentService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.web.multipart.MultipartFile;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.services.s3.S3Client;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 
-@Testcontainers
-@SpringBootTest
-public class AttachmentsIntegrationTest {
+public class AttachmentsIntegrationTest extends BaseIntegration {
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @LocalServerPort
+    private int port;
 
     @Container
     private static final LocalStackContainer localStack =
@@ -36,9 +43,6 @@ public class AttachmentsIntegrationTest {
     @Autowired
     private AttachmentService attachmentService;
 
-    @Autowired
-    private S3Client amazonS3;
-
     private static String TEST_BUCKET = "test-bucket";
 
 
@@ -46,71 +50,103 @@ public class AttachmentsIntegrationTest {
     static void configureProperties(org.springframework.test.context.DynamicPropertyRegistry registry) {
         registry.add("cloud.aws.s3.bucket", () -> TEST_BUCKET );
         registry.add("cloud.aws.region.static", localStack::getRegion);
+        registry.add("cloud.aws.credentials.access-key", localStack::getAccessKey);
+        registry.add("cloud.aws.credentials.secret-key", localStack::getSecretKey);
+        registry.add("cloud.aws.s3.endpoint", localStack::getEndpoint);
     }
 
     @BeforeEach
-    void setUp() {
-        amazonS3.createBucket(builder -> builder.bucket(TEST_BUCKET));
+    void setUp() throws IOException, InterruptedException {
+        localStack.execInContainer("awslocal", "s3", "mb", "s3://" + TEST_BUCKET);
+
+        File testFile = new File("src/test/resources/test-file.txt");
+        if (!testFile.exists()) {
+            testFile.createNewFile();
+        }
     }
 
     @AfterEach
-    void tearDown() {
-        amazonS3.listObjects(builder -> builder.bucket(TEST_BUCKET)).contents().forEach(s3Object -> amazonS3.deleteObject(builder -> builder.bucket(TEST_BUCKET).key(s3Object.key())));
-        amazonS3.deleteBucket(builder -> builder.bucket(TEST_BUCKET));
+    void tearDown() throws IOException, InterruptedException {
+        localStack.execInContainer("awslocal", "s3", "rm", "s3://" + TEST_BUCKET, "--recursive");
+        localStack.execInContainer("awslocal", "s3", "rb", "s3://" + TEST_BUCKET);
+
+        // Delete the temporary file
+        File tempFile = new File("src/test/resources/test-file.txt");
+        if (tempFile.exists()) {
+            tempFile.delete();
+        }
     }
 
     @Test
-    void testCreateAttachmentForTask() throws IOException {
+    @Sql({"/schema.sql", "/data.sql"})
+    void testCreateAttachmentForTask() throws IOException, InterruptedException {
         // Prepare a mock file
-        MultipartFile file = new MockMultipartFile(
+        File file = new File("src/test/resources/test-file.txt");
+
+        FileWriter fw = new FileWriter(file);
+        fw.write("This is a test file.");
+
+        // Create the URL for the endpoint
+        String url = "http://localhost:" + port + "/api/v1/attachments/task/1";
+
+        // Send a POST request to create the attachment
+        AttachmentDto attachmentDto = restTemplate.postForObject(url, file, AttachmentDto.class);
+    System.out.println(attachmentDto);
+        // Assertions
+        assertNotNull(attachmentDto);
+        assertEquals("test-file.txt", attachmentDto.getFileName());
+
+        // Verify the file exists in S3
+        String output = localStack.execInContainer("awslocal", "s3", "ls", "s3://" + TEST_BUCKET).getStdout();
+        long objectCount = output.lines().count();
+        assertEquals(1, objectCount);
+    }
+
+    @Test
+    void testCreateAttachmentForIssue() throws IOException, InterruptedException {
+        // Prepare a mock file
+        MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "test-file.txt",
                 "text/plain",
                 new FileInputStream("src/test/resources/test-file.txt")
         );
 
-        // Call the service method
-        AttachmentDto attachmentDto = attachmentService.createAttachmentForTask(file, 1);
+        // Create the URL for the endpoint
+        String url = "http://localhost:" + port + "/api/v1/attachments/issue/1";
+
+        // Send a POST request to create the attachment
+        AttachmentDto attachmentDto = restTemplate.postForObject(url, file, AttachmentDto.class);
 
         // Assertions
         assertNotNull(attachmentDto);
         assertEquals("test-file.txt", attachmentDto.getFileName());
 
         // Verify the file exists in S3
-        assertEquals(1, amazonS3.listObjects(builder -> builder.bucket(TEST_BUCKET)).contents().size());
+        String output = localStack.execInContainer("awslocal", "s3", "ls", "s3://" + TEST_BUCKET).getStdout();
+        long objectCount = output.lines().count();
+        assertEquals(1, objectCount);
     }
 
     @Test
-    void testCreateAttachmentForIssue() throws IOException {
-        // Prepare a mock file
-        MultipartFile file = new MockMultipartFile(
-                "file",
-                "test-file.txt",
-                "text/plain",
-                new FileInputStream("src/test/resources/test-file.txt")
-        );
-
-        // Call the service method
-        AttachmentDto attachmentDto = attachmentService.createAttachmentForIssue(file, 1);
-
-        // Assertions
-        assertNotNull(attachmentDto);
-        assertEquals("test-file.txt", attachmentDto.getFileName());
-
-        // Verify the file exists in S3
-        assertEquals(1, amazonS3.listObjects(builder -> builder.bucket(TEST_BUCKET)).contents().size());
-    }
-
-    @Test
-    void testDeleteAttachment() {
+    void testDeleteAttachment() throws IOException, InterruptedException {
         // Simulate an attachment creation
-        AttachmentDto attachmentDto = attachmentService.createAttachmentForTask(
-                new MockMultipartFile("file", "test-file.txt", "text/plain", "content".getBytes()), 1);
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "test-file.txt",
+                "text/plain",
+                new FileInputStream("src/test/resources/test-file.txt")
+        );
+        String createUrl = "http://localhost:" + port + "/api/v1/attachments/task/1";
+        AttachmentDto attachmentDto = restTemplate.postForObject(createUrl, file, AttachmentDto.class);
 
         // Delete the attachment
-        attachmentService.deleteAttachment(attachmentDto.getId());
+        String deleteUrl = "http://localhost:" + port + "/api/v1/attachments/" + attachmentDto.getId();
+        restTemplate.delete(deleteUrl);
 
         // Verify the file no longer exists in S3
-        assertEquals(0, amazonS3.listObjects(builder -> builder.bucket(TEST_BUCKET)).contents().size());
+        String output = localStack.execInContainer("awslocal", "s3", "ls", "s3://" + TEST_BUCKET).getStdout();
+        long objectCount = output.lines().count();
+        assertEquals(0, objectCount);
     }
 }

@@ -6,6 +6,7 @@ import org.example.projectmanagementapi.dto.response.TaskDto;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 import org.example.projectmanagementapi.enums.TaskStatus;
 import org.example.projectmanagementapi.exception.ApiError;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -13,9 +14,6 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.time.LocalDate;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class TaskIntegrationTest extends BaseIntegration {
 
@@ -37,8 +35,8 @@ public class TaskIntegrationTest extends BaseIntegration {
 
     TaskDto response = restTemplate.postForObject(url, taskRequestDto, TaskDto.class);
     System.out.println(response);
-    assertNotNull(response);
-    assertEquals("Test Task", response.getDescription());
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals("Test Task", response.getDescription());
   }
 
   @Test
@@ -47,9 +45,9 @@ public class TaskIntegrationTest extends BaseIntegration {
     String url = "http://localhost:" + port + "/api/v1/tasks";
     TaskDto[] tasks = restTemplate.getForObject(url, TaskDto[].class);
 
-    assertNotNull(tasks);
-    assertEquals(5, tasks.length);
-    assertEquals("Develop login feature", tasks[0].getDescription());
+    Assertions.assertNotNull(tasks);
+    Assertions.assertEquals(5, tasks.length);
+    Assertions.assertEquals("Develop login feature", tasks[0].getDescription());
   }
 
   @Test
@@ -58,8 +56,8 @@ public class TaskIntegrationTest extends BaseIntegration {
     String url = "http://localhost:" + port + "/api/v1/tasks/1";
     TaskDto taskDto = restTemplate.getForObject(url, TaskDto.class);
 
-    assertNotNull(taskDto);
-    assertEquals("Develop login feature", taskDto.getDescription());
+    Assertions.assertNotNull(taskDto);
+    Assertions.assertEquals("Develop login feature", taskDto.getDescription());
   }
 
   @Test
@@ -78,8 +76,8 @@ public class TaskIntegrationTest extends BaseIntegration {
 
     DetailedTaskDto response = restTemplate.getForObject(url, DetailedTaskDto.class);
 
-    assertNotNull(response);
-    assertEquals("Updated Task", response.getDescription());
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals("Updated Task", response.getDescription());
   }
 
   @Test
@@ -89,8 +87,8 @@ public class TaskIntegrationTest extends BaseIntegration {
     restTemplate.delete(url);
 
     ApiError taskDto = restTemplate.getForObject(url, ApiError.class);
-    assertNotNull(taskDto);
-    assertEquals("Task not found with id 1", taskDto.getMessage());
+    Assertions.assertNotNull(taskDto);
+    Assertions.assertEquals("Task not found with id 1", taskDto.getMessage());
   }
 
   @Test
@@ -102,8 +100,8 @@ public class TaskIntegrationTest extends BaseIntegration {
     String taskUrl = "http://localhost:" + port + "/api/v1/tasks/1";
     DetailedTaskDto taskDto = restTemplate.getForObject(taskUrl, DetailedTaskDto.class);
 
-    assertNotNull(taskDto);
-    assertEquals(1, taskDto.getUsers().size());
+    Assertions.assertNotNull(taskDto);
+    Assertions.assertEquals(1, taskDto.getUsers().size());
   }
 
   @Test
@@ -115,8 +113,8 @@ public class TaskIntegrationTest extends BaseIntegration {
     String taskUrl = "http://localhost:" + port + "/api/v1/tasks/1";
     DetailedTaskDto taskDto = restTemplate.getForObject(taskUrl, DetailedTaskDto.class);
 
-    assertNotNull(taskDto);
-    assertEquals(1, taskDto.getUsers().size());
+    Assertions.assertNotNull(taskDto);
+    Assertions.assertEquals(1, taskDto.getUsers().size());
   }
 
   @Test
@@ -125,8 +123,8 @@ public class TaskIntegrationTest extends BaseIntegration {
     String url = "http://localhost:" + port + "/api/v1/tasks/100";
     ApiError taskDto = restTemplate.getForObject(url, ApiError.class);
 
-    assertNotNull(taskDto);
-    assertEquals("Task not found with id 100", taskDto.getMessage());
+    Assertions.assertNotNull(taskDto);
+    Assertions.assertEquals("Task not found with id 100", taskDto.getMessage());
   }
 
   @Test
@@ -138,8 +136,8 @@ public class TaskIntegrationTest extends BaseIntegration {
     String taskUrl = "http://localhost:" + port + "/api/v1/tasks/1";
     DetailedTaskDto taskDto = restTemplate.getForObject(taskUrl, DetailedTaskDto.class);
 
-    assertNotNull(taskDto);
-    assertEquals(1, taskDto.getUsers().size());
+    Assertions.assertNotNull(taskDto);
+    Assertions.assertEquals(1, taskDto.getUsers().size());
   }
 
   @Test
@@ -151,7 +149,7 @@ public class TaskIntegrationTest extends BaseIntegration {
     String taskUrl = "http://localhost:" + port + "/api/v1/tasks/1";
     DetailedTaskDto taskDto = restTemplate.getForObject(taskUrl, DetailedTaskDto.class);
 
-    assertNotNull(taskDto);
-    assertEquals(1, taskDto.getUsers().size());
+    Assertions.assertNotNull(taskDto);
+    Assertions.assertEquals(1, taskDto.getUsers().size());
   }
 }

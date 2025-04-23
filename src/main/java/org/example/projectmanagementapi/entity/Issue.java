@@ -46,10 +46,10 @@ public class Issue {
   @JoinColumn(name = "assigned_to_id")
   private User assignedTo;
 
-  @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Comment> comments;
 
-  @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Attachment> attachments;
 
   public void addComment(Comment comment) {

@@ -102,18 +102,11 @@ public class ProjectsIntegrationTest extends BaseIntegration {
   public void testDeleteProject() {
     String url = "http://localhost:" + port + "/api/v1/projects/1";
 
-    ProjectWithCollaboratorsDto[] projectsBeforeDelete =
-        restTemplate.getForObject(
-            "http://localhost:" + port + "/api/v1/projects", ProjectWithCollaboratorsDto[].class);
     restTemplate.delete(url);
+    ApiError apiError = restTemplate.getForObject(url, ApiError.class);
 
-    ProjectWithCollaboratorsDto[] projectsAfterDelete =
-        restTemplate.getForObject(
-            "http://localhost:" + port + "/api/v1/projects", ProjectWithCollaboratorsDto[].class);
-
-    assertNotNull(projectsAfterDelete);
-    assertNotEquals(projectsBeforeDelete.length, projectsAfterDelete.length);
-    assertEquals(2, projectsAfterDelete.length);
+    assertNotNull(apiError);
+    assertEquals("Project not found of id 1", apiError.getMessage());
   }
 
   @Test
