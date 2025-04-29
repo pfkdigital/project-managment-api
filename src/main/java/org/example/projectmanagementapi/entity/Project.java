@@ -1,6 +1,8 @@
 package org.example.projectmanagementapi.entity;
 
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.*;
@@ -12,7 +14,7 @@ import org.example.projectmanagementapi.enums.ProjectStatus;
 @Getter
 @Setter
 @Builder
-public class Project {
+public class Project implements Serializable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

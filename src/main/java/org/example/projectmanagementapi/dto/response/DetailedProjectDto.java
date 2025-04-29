@@ -23,5 +23,4 @@ public class DetailedProjectDto implements Serializable {
     private List<UserDto> collaborators;
     private List<TaskDto> tasks;
     private List<IssueDto> issues;
-    private List<CommentDto> comments;
 }

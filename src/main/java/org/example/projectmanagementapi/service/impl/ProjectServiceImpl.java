@@ -14,6 +14,9 @@ import org.example.projectmanagementapi.repository.ProjectRepository;
 import org.example.projectmanagementapi.repository.UserRepository;
 import org.example.projectmanagementapi.service.NotificationService;
 import org.example.projectmanagementapi.service.ProjectService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -47,6 +50,7 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
+  @CachePut(value = "projects", key = "#projectId")
   public DetailedProjectDto getProjectById(Integer projectId) {
     Project selectedProject = findProjectById(projectId);
 
@@ -54,6 +58,7 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
+  @Cacheable(value = "projects")
   public List<ProjectWithCollaboratorsDto> getAllProjects() {
     List<Project> projects = projectRepository.findAll();
 
@@ -61,6 +66,7 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
+  @CachePut(value = "projects", key = "#projectId")
   public DetailedProjectDto updateProject(Integer projectId, ProjectRequestDto projectRequestDto) {
 
     Project selectedProject = findProjectById(projectId);
@@ -87,6 +93,7 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
+  @CacheEvict(value = "projects", key = "#projectId")
   public void deleteProject(Integer projectId) {
     Project selectedProject = findProjectById(projectId);
 
@@ -97,6 +104,7 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
+  @CachePut(value = "projects", key = "#projectId")
   public void addProjectMember(Integer projectId, Integer userId) {
     Project selectedProject = findProjectById(projectId);
     User selectedUser = findUserById(userId);
@@ -113,6 +121,7 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
+  @CachePut(value = "projects", key = "#projectId")
   public void removeProjectMember(Integer projectId, Integer userId) {
     Project selectedProject = findProjectById(projectId);
     User selectedUser = findUserById(userId);
@@ -129,9 +138,20 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   private Project findProjectById(Integer projectId) {
-    return projectRepository
-        .findById(projectId)
-        .orElseThrow(() -> new RuntimeException("Project not found of id " + projectId));
+    Project project = projectRepository
+            .findProjectWithOwnerById(projectId)
+            .orElseThrow(() -> new RuntimeException("Project not found of id " + projectId));
+
+    projectRepository.findProjectWithCollaboratorsById(projectId)
+            .ifPresent(p -> project.setCollaborators(p.getCollaborators()));
+
+    projectRepository.findProjectWithTasksById(projectId)
+            .ifPresent(p -> project.setTasks(p.getTasks()));
+
+    projectRepository.findProjectWithIssuesById(projectId)
+            .ifPresent(p -> project.setIssues(p.getIssues()));
+
+    return project;
   }
 
   private User findUserById(Integer userId) {

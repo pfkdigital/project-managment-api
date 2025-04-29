@@ -1,6 +1,8 @@
 package org.example.projectmanagementapi.entity;
 
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.time.LocalDate;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -13,7 +15,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Getter
 @Setter
 @ToString
-public class Comment {
+public class Comment implements Serializable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

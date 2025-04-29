@@ -5,13 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class DetailedCommentDto {
+public class DetailedCommentDto implements Serializable {
     private Integer id;
     private String content;
     private LocalDate createdAt;

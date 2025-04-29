@@ -6,11 +6,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class RegisterRequestDto {
+public class RegisterRequestDto implements Serializable {
   @Email(message = "Email should be valid", regexp = "^(.+)@(.+)$")
   @NotEmpty(message = "Email should not be empty")
   private String email;

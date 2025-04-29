@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 import org.example.projectmanagementapi.enums.TaskStatus;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -14,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class DetailedTaskDto {
+public class DetailedTaskDto implements Serializable {
     private Integer id;
     private String description;
     private LocalDate dueDate;

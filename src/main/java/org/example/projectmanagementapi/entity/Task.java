@@ -1,6 +1,8 @@
 package org.example.projectmanagementapi.entity;
 
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,8 +16,7 @@ import org.example.projectmanagementapi.enums.TaskStatus;
 @Getter
 @Setter
 @Builder
-@ToString
-public class Task {
+public class Task implements Serializable {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer id;

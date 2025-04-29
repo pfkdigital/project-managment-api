@@ -15,6 +15,9 @@ import org.example.projectmanagementapi.repository.ProjectRepository;
 import org.example.projectmanagementapi.repository.UserRepository;
 import org.example.projectmanagementapi.service.IssueService;
 import org.example.projectmanagementapi.service.NotificationService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -56,16 +59,19 @@ public class IssueServiceImpl implements IssueService {
   }
 
   @Override
+  @CachePut(value = "issues", key = "#issueId")
   public DetailedIssueDto getIssue(Integer issueId) {
     return issueMapper.toDetailedIssueDto(findIssueById(issueId));
   }
 
   @Override
+  @Cacheable(value = "issues")
   public List<IssueDto> getAllIssues() {
     return issueRepository.findAll().stream().map(issueMapper::toDto).toList();
   }
 
   @Override
+  @CachePut(value = "issues", key = "#issueId")
   public DetailedIssueDto updateIssue(Integer issueId, IssueRequestDto issueRequestDto) {
     Issue selectedIssue = findIssueById(issueId);
     User assignedToUser = findUserById(issueRequestDto.getAssignedToId());
@@ -85,6 +91,7 @@ public class IssueServiceImpl implements IssueService {
   }
 
   @Override
+  @CacheEvict(value = "issues", key = "#issueId")
   public void deleteIssue(Integer issueId) {
     Issue selectedIssue = findIssueById(issueId);
 

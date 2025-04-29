@@ -2,6 +2,8 @@ package org.example.projectmanagementapi.service.impl;
 
 import java.time.LocalDate;
 import java.util.List;
+
+import jakarta.persistence.Cacheable;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.request.CommentRequestDto;
 import org.example.projectmanagementapi.dto.request.CommentUpdateRequest;
@@ -15,7 +17,9 @@ import org.example.projectmanagementapi.repository.TaskRepository;
 import org.example.projectmanagementapi.repository.UserRepository;
 import org.example.projectmanagementapi.service.CommentService;
 import org.example.projectmanagementapi.service.NotificationService;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+//import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -62,6 +66,7 @@ public class CommentServiceImpl implements CommentService {
   }
 
   @Override
+  @CachePut(value = "comments", key = "#commentId")
   public CommentDto getComment(Integer commentId) {
     return commentMapper.toDto(findCommentById(commentId));
   }
@@ -72,18 +77,20 @@ public class CommentServiceImpl implements CommentService {
   }
 
   @Override
+  @CachePut(value = "comments", key = "#commentId")
   public CommentDto updateComment(Integer commentId, CommentUpdateRequest comment) {
 
-//    System.out.println(SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-//    User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-//
-//    if (currentUser == null) {
-//      throw new IllegalArgumentException("User not found");
-//    }
-//
-//    if (!currentUser.getId().equals(comment.getAuthorId())) {
-//      throw new IllegalArgumentException("You can only update your own comments");
-//    }
+    //    System.out.println(SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+    //    User currentUser = (User)
+    // SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    //
+    //    if (currentUser == null) {
+    //      throw new IllegalArgumentException("User not found");
+    //    }
+    //
+    //    if (!currentUser.getId().equals(comment.getAuthorId())) {
+    //      throw new IllegalArgumentException("You can only update your own comments");
+    //    }
 
     Comment existingComment = findCommentById(commentId);
     existingComment.setContent(comment.getContent());
@@ -93,12 +100,13 @@ public class CommentServiceImpl implements CommentService {
     Comment updatedComment = commentRepository.save(existingComment);
 
     notificationService.createNotification(
-            "Comment " + existingComment.getId() + " has been updated", NotificationType.UPDATE);
+        "Comment " + existingComment.getId() + " has been updated", NotificationType.UPDATE);
 
     return commentMapper.toDto(updatedComment);
   }
 
   @Override
+  @CacheEvict(value = "comments", key = "#commentId")
   public void deleteComment(Integer commentId) {
     Comment comment = findCommentById(commentId);
     commentRepository.delete(comment);

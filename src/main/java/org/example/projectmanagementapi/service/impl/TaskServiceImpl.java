@@ -3,6 +3,7 @@ package org.example.projectmanagementapi.service.impl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.response.DetailedTaskDto;
 import org.example.projectmanagementapi.dto.response.TaskDto;
@@ -19,6 +20,9 @@ import org.example.projectmanagementapi.repository.TaskRepository;
 import org.example.projectmanagementapi.repository.UserRepository;
 import org.example.projectmanagementapi.service.NotificationService;
 import org.example.projectmanagementapi.service.TaskService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -65,17 +69,20 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
+  @CachePut(value = "tasks", key = "#taskId")
   public DetailedTaskDto getTask(Integer taskId) {
     return taskMapper.toDetailedTaskDto(findTaskById(taskId));
   }
 
   @Override
+  @Cacheable(value = "tasks")
   public List<TaskDto> getTasks() {
     List<Task> tasks = taskRepository.findAll();
     return tasks.stream().map(taskMapper::toTaskDto).toList();
   }
 
   @Override
+  @CachePut(value = "tasks", key = "#taskId")
   public void assignUserToTask(Integer taskId, Integer userId) {
     User user = findUserById(userId);
     Task task = findTaskById(taskId);
@@ -84,6 +91,7 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
+  @CachePut(value = "tasks", key = "#taskId")
   public void removeUserFromTask(Integer taskId, Integer userId) {
     User user = findUserById(userId);
     Task task = findTaskById(taskId);
@@ -92,6 +100,7 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
+    @CachePut(value = "tasks", key = "#taskId")
   public DetailedTaskDto updateTask(Integer taskId, TaskRequestDto taskDto) {
     Task selectedTask =
         taskRepository
@@ -117,6 +126,7 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
+  @CacheEvict(value = "tasks", key = "#taskId")
   public void deleteTask(Integer taskId) {
     Task task =
         taskRepository

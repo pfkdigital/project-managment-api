@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class DetailedIssueDto {
+public class DetailedIssueDto implements Serializable {
     private Integer id;
     private String title;
     private String description;

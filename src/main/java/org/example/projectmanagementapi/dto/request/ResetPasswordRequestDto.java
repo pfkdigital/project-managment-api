@@ -8,11 +8,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Builder
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ResetPasswordRequestDto {
+public class ResetPasswordRequestDto implements Serializable {
   @NotEmpty(message = "Password should not be empty")
   @Min(value = 8, message = "Password should be at least 8 characters long")
   @Pattern(
