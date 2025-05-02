@@ -16,5 +16,4 @@ public class NotificationDto implements Serializable {
     private String message;
     private Boolean isRead;
     private String createdAt;
-    private String updatedAt;
 }

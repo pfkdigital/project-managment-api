@@ -2,9 +2,10 @@ package org.example.projectmanagementapi;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootTest
-class ProjectManagmentApiApplicationTests {
+class ProjectManagementApiTests {
 
   @Test
   void contextLoads() {}

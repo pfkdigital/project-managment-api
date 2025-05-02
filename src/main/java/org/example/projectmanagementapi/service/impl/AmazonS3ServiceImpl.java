@@ -10,7 +10,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.io.IOException;
 
@@ -24,7 +23,7 @@ public class AmazonS3ServiceImpl implements AmazonS3Service {
   private final S3Client s3Client;
 
   @Override
-  public PutObjectResponse uploadObject(MultipartFile file, String keyName) {
+  public void uploadObject(MultipartFile file, String keyName) {
     try {
       RequestBody requestBody = RequestBody.fromInputStream(file.getInputStream(), file.getSize());
       PutObjectRequest request =
@@ -35,7 +34,7 @@ public class AmazonS3ServiceImpl implements AmazonS3Service {
               .contentLength(file.getSize())
               .build();
 
-      return s3Client.putObject(request, requestBody);
+        s3Client.putObject(request, requestBody);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

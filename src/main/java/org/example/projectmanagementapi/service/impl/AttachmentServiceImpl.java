@@ -41,7 +41,7 @@ public class AttachmentServiceImpl implements AttachmentService {
   private final AmazonS3Service amazonS3Service;
   private final AttachmentMapper attachmentMapper;
   private final UserRepository
-      userRepository; // Temoprary fix for the missing user in Attachment entity
+      userRepository;
 
   @Override
   public AttachmentDto createAttachmentForTask(MultipartFile file, Integer taskId) {
