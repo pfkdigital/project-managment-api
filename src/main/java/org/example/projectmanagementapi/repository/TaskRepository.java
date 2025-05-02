@@ -9,6 +9,12 @@ import org.springframework.data.repository.query.Param;
 
 public interface TaskRepository extends JpaRepository<Task, Integer> {
 
-  @Query("select t from Task t LEFT join fetch User u ")
-  Optional<Task> findTaskById(@Param("taskId") Integer taskId);
+  @Query("SELECT t from Task t LEFT JOIN FETCH t.users WHERE t.id = :id")
+  Optional<Task> findTaskByIdWithUsers(@Param("id") Integer id);
+
+  @Query("SELECT t from Task t LEFT JOIN FETCH t.attachments WHERE t.id = :id")
+  Optional<Task> findTaskByIdWithAttachments(@Param("id") Integer id);
+
+  @Query("SELECT t from Task t LEFT JOIN FETCH t.comments WHERE t.id = :id")
+  Optional<Task> findTaskByIdWithComments(@Param("id") Integer id);
 }

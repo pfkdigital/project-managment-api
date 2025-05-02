@@ -1,7 +1,6 @@
 package org.example.projectmanagementapi.dto.response;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +20,6 @@ public class DetailedProjectDto implements Serializable {
     private UserDto owner;
     private String displayImageUrl;
     private List<UserDto> collaborators;
-    private List<TaskDto> tasks;
-    private List<IssueDto> issues;
+    private List<NestedTaskDto> tasks;
+    private List<NestedIssueDto> issues;
 }

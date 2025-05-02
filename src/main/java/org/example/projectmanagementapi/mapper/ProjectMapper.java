@@ -6,17 +6,14 @@ import org.example.projectmanagementapi.dto.response.NestedProjectDto;
 import org.example.projectmanagementapi.entity.Project;
 import org.mapstruct.*;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+@Mapper(
+    componentModel = MappingConstants.ComponentModel.SPRING,
+    uses = {UserMapper.class, TaskMapper.class})
 public interface ProjectMapper {
 
   ProjectWithCollaboratorsDto toProjectWithCollaborators(Project entity);
 
   DetailedProjectDto toDetailedProjectDto(Project entity);
 
-  Project toEntity(NestedProjectDto nestedProjectDto);
-
   NestedProjectDto toDto(Project project);
-
-  @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-  Project partialUpdate(NestedProjectDto nestedProjectDto, @MappingTarget Project project);
 }

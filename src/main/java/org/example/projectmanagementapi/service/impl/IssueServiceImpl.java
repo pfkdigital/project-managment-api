@@ -1,5 +1,6 @@
 package org.example.projectmanagementapi.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.request.IssueRequestDto;
@@ -73,7 +74,10 @@ public class IssueServiceImpl implements IssueService {
   @Override
   @CachePut(value = "issues", key = "#issueId")
   public DetailedIssueDto updateIssue(Integer issueId, IssueRequestDto issueRequestDto) {
-    Issue selectedIssue = findIssueById(issueId);
+    Issue selectedIssue =
+        issueRepository
+            .findById(issueId)
+            .orElseThrow(() -> new RuntimeException("Issue with id " + issueId + " not found"));
     User assignedToUser = findUserById(issueRequestDto.getAssignedToId());
 
     selectedIssue.setTitle(issueRequestDto.getTitle());
@@ -93,7 +97,10 @@ public class IssueServiceImpl implements IssueService {
   @Override
   @CacheEvict(value = "issues", key = "#issueId")
   public void deleteIssue(Integer issueId) {
-    Issue selectedIssue = findIssueById(issueId);
+    Issue selectedIssue =
+        issueRepository
+            .findById(issueId)
+            .orElseThrow(() -> new RuntimeException("Issue with id " + issueId + " not found"));
 
     notificationService.createNotification(
         "Issue " + selectedIssue.getId() + " has been deleted", NotificationType.DESTRUCTION);
@@ -114,8 +121,23 @@ public class IssueServiceImpl implements IssueService {
   }
 
   private Issue findIssueById(Integer issueId) {
-    return issueRepository
-        .findById(issueId)
-        .orElseThrow(() -> new RuntimeException("Issue with id " + issueId + " not found"));
+    Issue issue =
+        issueRepository
+            .findById(issueId)
+            .orElseThrow(() -> new RuntimeException("Issue with id " + issueId + " not found"));
+
+    issue.setComments(
+        issueRepository
+            .findTaskByIdWithComments(issueId)
+            .map(Issue::getComments)
+            .orElse(new ArrayList<>()));
+
+    issue.setAttachments(
+        issueRepository
+            .findTaskByIdWithAttachments(issueId)
+            .map(Issue::getAttachments)
+            .orElse(new ArrayList<>()));
+
+    return issue;
   }
 }

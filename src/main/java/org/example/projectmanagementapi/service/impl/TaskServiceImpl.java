@@ -2,6 +2,7 @@ package org.example.projectmanagementapi.service.impl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -100,7 +101,7 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-    @CachePut(value = "tasks", key = "#taskId")
+  @CachePut(value = "tasks", key = "#taskId")
   public DetailedTaskDto updateTask(Integer taskId, TaskRequestDto taskDto) {
     Task selectedTask =
         taskRepository
@@ -153,8 +154,22 @@ public class TaskServiceImpl implements TaskService {
   }
 
   private Task findTaskById(Integer taskId) {
-    return taskRepository
-        .findById(taskId)
-        .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
+    Task task =
+        taskRepository
+            .findById(taskId)
+            .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
+    task.setUsers(
+        taskRepository.findTaskByIdWithUsers(taskId).map(Task::getUsers).orElse(new ArrayList<>()));
+    task.setAttachments(
+        taskRepository
+            .findTaskByIdWithAttachments(taskId)
+            .map(Task::getAttachments)
+            .orElse(new ArrayList<>()));
+    task.setComments(
+        taskRepository
+            .findTaskByIdWithComments(taskId)
+            .map(Task::getComments)
+            .orElse(new ArrayList<>()));
+    return task;
   }
 }

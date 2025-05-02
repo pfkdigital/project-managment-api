@@ -5,23 +5,21 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.projectmanagementapi.enums.PriorityStatus;
+import org.example.projectmanagementapi.enums.TaskStatus;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.List;
 
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class DetailedIssueDto implements Serializable {
+public class NestedTaskDto implements Serializable {
     private Integer id;
-    private String title;
     private String description;
-    private String status;
-    private PriorityStatus priorityStatus;
-    private UserDto reportedBy;
-    private UserDto assignedTo;
-    private List<CommentDto> comments;
-    private List<AttachmentDto> attachments;
+    private LocalDate dueDate;
+    private PriorityStatus priority;
+    private TaskStatus status;
+    private List<UserDto> users;
 }

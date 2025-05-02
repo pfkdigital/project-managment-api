@@ -1,5 +1,6 @@
 package org.example.projectmanagementapi.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
@@ -69,7 +70,10 @@ public class ProjectServiceImpl implements ProjectService {
   @CachePut(value = "projects", key = "#projectId")
   public DetailedProjectDto updateProject(Integer projectId, ProjectRequestDto projectRequestDto) {
 
-    Project selectedProject = findProjectById(projectId);
+    Project selectedProject =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new RuntimeException("Project not found with id " + projectId));
     selectedProject.setName(projectRequestDto.getName());
     selectedProject.setDescription(projectRequestDto.getDescription());
     selectedProject.setDisplayImageUrl(projectRequestDto.getDisplayImageUrl());
@@ -95,12 +99,13 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   @CacheEvict(value = "projects", key = "#projectId")
   public void deleteProject(Integer projectId) {
-    Project selectedProject = findProjectById(projectId);
-
+    Project selectedProject =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new RuntimeException("Project not found with id " + projectId));
+    projectRepository.delete(selectedProject);
     notificationService.createNotification(
         "Project " + selectedProject.getName() + " has been deleted", NotificationType.DESTRUCTION);
-
-    projectRepository.delete(selectedProject);
   }
 
   @Override
@@ -138,18 +143,31 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   private Project findProjectById(Integer projectId) {
-    Project project = projectRepository
-            .findProjectWithOwnerById(projectId)
-            .orElseThrow(() -> new RuntimeException("Project not found of id " + projectId));
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new RuntimeException("Project not found with id " + projectId));
 
-    projectRepository.findProjectWithCollaboratorsById(projectId)
-            .ifPresent(p -> project.setCollaborators(p.getCollaborators()));
+    project.setOwner(
+        projectRepository.findProjectWithOwnerById(projectId).map(Project::getOwner).orElse(null));
 
-    projectRepository.findProjectWithTasksById(projectId)
-            .ifPresent(p -> project.setTasks(p.getTasks()));
+    project.setCollaborators(
+        projectRepository
+            .findProjectWithCollaboratorsById(projectId)
+            .map(Project::getCollaborators)
+            .orElse(new ArrayList<>()));
 
-    projectRepository.findProjectWithIssuesById(projectId)
-            .ifPresent(p -> project.setIssues(p.getIssues()));
+    project.setTasks(
+        projectRepository
+            .findProjectWithTasksById(projectId)
+            .map(Project::getTasks)
+            .orElse(new ArrayList<>()));
+
+    project.setIssues(
+        projectRepository
+            .findProjectWithIssuesById(projectId)
+            .map(Project::getIssues)
+            .orElse(new ArrayList<>()));
 
     return project;
   }
