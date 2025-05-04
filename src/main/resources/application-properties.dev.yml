@@ -1,0 +1,23 @@
+# Application configuration
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pfktasks
+    username: pfkuser
+    password: secret
+    driver-class-name: org.postgresql.Driver
+
+# LocalStack AWS configuration overrides
+cloud:
+  aws:
+    credentials:
+      accessKey: localstack
+      secretKey: localstack
+    endpoint:
+      uri: http://localhost:4566
+    region:
+      static: us-east-1
+    stack:
+      auto: false
+    ses:
+      from:
+        email: "noah@pfkdigital.co.uk"

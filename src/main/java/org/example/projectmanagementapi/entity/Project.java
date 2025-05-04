@@ -44,10 +44,18 @@ public class Project implements Serializable {
       inverseJoinColumns = @JoinColumn(name = "collaborator_id"))
   private List<User> collaborators;
 
-  @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL,orphanRemoval = true)
+  @OneToMany(
+      mappedBy = "project",
+      fetch = FetchType.LAZY,
+      cascade = CascadeType.ALL,
+      orphanRemoval = true)
   private List<Task> tasks;
 
-  @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL,orphanRemoval = true)
+  @OneToMany(
+      mappedBy = "project",
+      fetch = FetchType.LAZY,
+      cascade = CascadeType.ALL,
+      orphanRemoval = true)
   private List<Issue> issues;
 
   public void addUser(User user) {
@@ -80,4 +88,18 @@ public class Project implements Serializable {
     issues.add(issue);
     issue.setProject(this);
   }
+
+  public void removeTask(Task task) {
+    if (tasks != null) {
+      tasks.remove(task);
+      task.setProject(null);
+    }
+  }
+
+    public void removeIssue(Issue issue) {
+        if (issues != null) {
+        issues.remove(issue);
+        issue.setProject(null);
+        }
+    }
 }

@@ -33,7 +33,7 @@ public class EmailServiceImpl implements EmailService {
   @Override
   public void sendAccountVerified(String to) {
     sendEmail(
-        to, "Account verified", "src/main/resources/templates/account-verified-email.html", null);
+        to, "Account verified", "src/main/resources/templates/account-verified.html", null);
   }
 
   @Override
@@ -41,7 +41,7 @@ public class EmailServiceImpl implements EmailService {
     sendEmail(
         to,
         "Reset your password",
-        "src/main/resources/templates/forgot-password-email.html",
+        "src/main/resources/templates/forgot-password.html",
         token);
   }
 

@@ -2,10 +2,7 @@ package org.example.projectmanagementapi.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.request.ForgotPasswordDto;
-import org.example.projectmanagementapi.dto.request.LoginRequestDto;
-import org.example.projectmanagementapi.dto.request.RegisterRequestDto;
-import org.example.projectmanagementapi.dto.request.ResetPasswordRequestDto;
+import org.example.projectmanagementapi.dto.request.*;
 import org.example.projectmanagementapi.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +21,8 @@ public class AuthController {
   }
 
   @GetMapping("/verify")
-  public ResponseEntity<?> verifyAccount(@RequestParam String token) {
-    authService.verifyAccount(token);
+  public ResponseEntity<?> verifyAccount(@RequestBody VerificationCodeDto verificationCodeDto) {
+    authService.verifyAccount(verificationCodeDto);
     return new ResponseEntity<>(HttpStatus.OK);
   }
 

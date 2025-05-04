@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "users")
+@Table(name = "password_reset_tokens")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

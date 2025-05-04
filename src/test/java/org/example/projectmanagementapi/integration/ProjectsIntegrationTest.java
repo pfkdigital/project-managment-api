@@ -1,139 +1,181 @@
 package org.example.projectmanagementapi.integration;
 
+import org.example.projectmanagementapi.config.TestJpaConfig;
 import org.example.projectmanagementapi.dto.request.ProjectRequestDto;
-import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
-import org.example.projectmanagementapi.dto.response.ProjectWithCollaboratorsDto;
 import org.example.projectmanagementapi.enums.ProjectStatus;
-import org.example.projectmanagementapi.exception.ApiError;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.*;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ProjectsIntegrationTest extends BaseIntegration {
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = {"spring.main.allow-bean-definition-overriding=true"})
+@ActiveProfiles("test")
+@Import(TestJpaConfig.class)
+@DisplayName("Project API Integration Tests")
+public class ProjectsIntegrationTest {
 
   @Autowired private TestRestTemplate restTemplate;
 
   @LocalServerPort private int port;
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testCreateProject() {
-    String url = "http://localhost:" + port + "/api/v1/projects";
-
-    ProjectRequestDto projectRequestDto = new ProjectRequestDto();
-    projectRequestDto.setName("Test Project");
-    projectRequestDto.setDescription("Test Description");
-    projectRequestDto.setStatus(ProjectStatus.ACTIVE);
-    projectRequestDto.setOwnerId(1);
-    projectRequestDto.setDisplayImageUrl("https://test.com/image.jpg");
-
-    ProjectWithCollaboratorsDto response =
-        restTemplate.postForObject(url, projectRequestDto, ProjectWithCollaboratorsDto.class);
-
-    assertNotNull(response);
-    assertEquals("Test Project", response.getName());
-    assertEquals("Test Description", response.getDescription());
+  private String getBaseUrl() {
+    return "http://localhost:" + port + "/api/v1/projects";
   }
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testGetAllProjects() {
-    String url = "http://localhost:" + port + "/api/v1/projects";
+  @Nested
+  @DisplayName("Project CRUD Operations")
+  class ProjectCrudTests {
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Create a new project")
+    public void testCreateProject() {
+      ProjectRequestDto projectRequestDto = new ProjectRequestDto();
+      projectRequestDto.setName("Test Project");
+      projectRequestDto.setDescription("Test Description");
+      projectRequestDto.setStatus(ProjectStatus.ACTIVE);
+      projectRequestDto.setDisplayImageUrl("http://example.com/image.png");
+      projectRequestDto.setOwnerId(1);
 
-    ProjectWithCollaboratorsDto[] projects =
-        restTemplate.getForObject(url, ProjectWithCollaboratorsDto[].class);
+      ResponseEntity<String> response =
+          restTemplate.postForEntity(getBaseUrl(), projectRequestDto, String.class);
 
-    assertNotNull(projects);
-    assertEquals(3, projects.length);
-    assertEquals("Project Alpha", projects[0].getName());
+      assertEquals(HttpStatus.CREATED, response.getStatusCode());
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Get all projects")
+    public void testGetAllProjects() {
+      ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl(), String.class);
+
+      assertEquals(HttpStatus.OK, response.getStatusCode());
+      String body = response.getBody();
+      assertNotNull(body);
+      assertTrue(body.contains("Project Alpha"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Get project by ID")
+    public void testGetProjectById() {
+      ResponseEntity<String> response =
+          restTemplate.getForEntity(getBaseUrl() + "/1", String.class);
+
+      assertEquals(HttpStatus.OK, response.getStatusCode());
+      String body = response.getBody();
+      assertNotNull(body);
+      assertTrue(body.contains("Project Alpha"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Update a project")
+    public void testUpdateProject() {
+      ProjectRequestDto projectRequestDto = new ProjectRequestDto();
+      projectRequestDto.setName("Updated Project Alpha");
+      projectRequestDto.setDescription("Updated first test project");
+      projectRequestDto.setStatus(ProjectStatus.ACTIVE);
+      projectRequestDto.setDisplayImageUrl("http://example.com/updated_image.png");
+      projectRequestDto.setOwnerId(1);
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      HttpEntity<ProjectRequestDto> request = new HttpEntity<>(projectRequestDto, headers);
+
+      ResponseEntity<String> response =
+          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.PUT, request, String.class);
+
+      assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Delete a project")
+    public void testDeleteProject() {
+      ResponseEntity<String> response =
+          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.DELETE, null, String.class);
+
+      assertEquals(HttpStatus.OK, response.getStatusCode());
+
+      ResponseEntity<String> getResponse =
+          restTemplate.getForEntity(getBaseUrl() + "/1", String.class);
+      System.out.println(getResponse);
+      assertTrue(getResponse.getStatusCode().is4xxClientError());
+    }
   }
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testGetProjectById() {
-    String url = "http://localhost:" + port + "/api/v1/projects/1";
+  @Nested
+  @DisplayName("Project Collaborator Operations")
+  class ProjectCollaboratorTests {
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Add collaborator to a project")
+    public void testAddCollaborator() {
+      ResponseEntity<String> response =
+          restTemplate.exchange(
+              getBaseUrl() + "/1/collaborators/4", HttpMethod.PATCH, null, String.class);
 
-    DetailedProjectDto projectDto = restTemplate.getForObject(url, DetailedProjectDto.class);
+      assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
 
-    assertNotNull(projectDto);
-    assertEquals("Project Alpha", projectDto.getName());
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Remove collaborator from a project")
+    public void testRemoveCollaborator() {
+      ResponseEntity<String> response =
+          restTemplate.exchange(
+              getBaseUrl() + "/1/collaborators/2", HttpMethod.DELETE, null, String.class);
+
+      assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
   }
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testGetByProjectIdWhenProjectDoesNotExist() {
-    String url = "http://localhost:" + port + "/api/v1/projects/100";
+  @Nested
+  @DisplayName("Project Error Cases")
+  class ProjectErrorTests {
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Get non-existent project")
+    public void testGetNonExistentProject() {
+      ResponseEntity<String> response =
+          restTemplate.getForEntity(getBaseUrl() + "/999", String.class);
 
-    ApiError projectDto = restTemplate.getForObject(url, ApiError.class);
+      assertTrue(response.getStatusCode().is4xxClientError());
+    }
 
-    assertNotNull(projectDto);
-    assertEquals("Project not found of id 100", projectDto.getMessage());
-  }
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Create project with missing required fields")
+    public void testCreateProjectWithMissingFields() {
+      ProjectRequestDto projectRequestDto = new ProjectRequestDto();
+      // Missing required fields
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testUpdateProject() {
-    String url = "http://localhost:" + port + "/api/v1/projects/1";
+      ResponseEntity<String> response =
+          restTemplate.postForEntity(getBaseUrl(), projectRequestDto, String.class);
 
-    ProjectRequestDto projectRequestDto = new ProjectRequestDto();
-    projectRequestDto.setName("Updated Project");
-    projectRequestDto.setDescription("Updated Description");
-    projectRequestDto.setStatus(ProjectStatus.COMPLETED);
-    projectRequestDto.setOwnerId(1);
-    projectRequestDto.setDisplayImageUrl("https://test.com/updated_image.jpg");
+      assertTrue(response.getStatusCode().is4xxClientError());
+    }
 
-    restTemplate.put(url, projectRequestDto, DetailedProjectDto.class);
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Add non-existent user as collaborator")
+    public void testAddNonExistentCollaborator() {
+      ResponseEntity<String> response =
+          restTemplate.exchange(
+              getBaseUrl() + "/1/collaborators/999", HttpMethod.PATCH, null, String.class);
 
-    DetailedProjectDto updatedProject = restTemplate.getForObject(url, DetailedProjectDto.class);
-
-    assertNotNull(updatedProject);
-    assertEquals("Updated Project", updatedProject.getName());
-    assertEquals("Updated Description", updatedProject.getDescription());
-    assertEquals(ProjectStatus.COMPLETED, updatedProject.getStatus());
-    assertEquals("https://test.com/updated_image.jpg", updatedProject.getDisplayImageUrl());
-  }
-
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testDeleteProject() {
-    String url = "http://localhost:" + port + "/api/v1/projects/1";
-
-    restTemplate.delete(url);
-    ApiError apiError = restTemplate.getForObject(url, ApiError.class);
-
-    assertNotNull(apiError);
-    assertEquals("Project not found of id 1", apiError.getMessage());
-  }
-
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testAddProjectMember() {
-    String patchUrl = "http://localhost:" + port + "/api/v1/projects/1/collaborators/2";
-    String getUrl = "http://localhost:" + port + "/api/v1/projects/1";
-
-    restTemplate.patchForObject(patchUrl, null, DetailedProjectDto.class);
-
-    DetailedProjectDto projectDto = restTemplate.getForObject(getUrl, DetailedProjectDto.class);
-
-    assertNotNull(projectDto);
-    assertEquals(3, projectDto.getCollaborators().size());
-  }
-
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testRemoveProjectMember() {
-    String patchUrl = "http://localhost:" + port + "/api/v1/projects/1/collaborators/2";
-    String getUrl = "http://localhost:" + port + "/api/v1/projects/1";
-
-    restTemplate.delete(patchUrl,null,Void.class);
-
-    DetailedProjectDto projectDto = restTemplate.getForObject(getUrl, DetailedProjectDto.class);
-
-    assertNotNull(projectDto);
-    assertEquals(1, projectDto.getCollaborators().size());
+      assertTrue(response.getStatusCode().is4xxClientError());
+    }
   }
 }

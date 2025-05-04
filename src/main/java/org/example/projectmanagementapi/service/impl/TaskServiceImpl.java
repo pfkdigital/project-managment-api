@@ -4,7 +4,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.response.DetailedTaskDto;
 import org.example.projectmanagementapi.dto.response.TaskDto;
@@ -41,7 +43,7 @@ public class TaskServiceImpl implements TaskService {
     Project project =
         projectRepository
             .findById(taskDto.getProjectId())
-            .orElseThrow(() -> new IllegalArgumentException("Project not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Project not found with id " + taskDto.getProjectId()));
 
     Task task =
         Task.builder()
@@ -106,7 +108,14 @@ public class TaskServiceImpl implements TaskService {
     Task selectedTask =
         taskRepository
             .findById(taskId)
-            .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
+            .orElseThrow(() -> new EntityNotFoundException("Task not found with id " + taskId));
+
+    Project project = findProjectById(taskDto.getProjectId());
+
+    if (!Objects.equals(selectedTask.getProject().getId(), project.getId())) {
+        project.removeTask(selectedTask);
+        selectedTask.setProject(project);
+    }
 
     selectedTask.setDescription(taskDto.getDescription());
     selectedTask.setDueDate(taskDto.getDueDate());
@@ -120,6 +129,7 @@ public class TaskServiceImpl implements TaskService {
             .message("Task with id " + updatedTask.getId() + " has been updated")
             .type(NotificationType.UPDATE)
             .isRead(false)
+            .createdAt(LocalDate.now())
             .build();
 
     notificationService.createNotification(notification);
@@ -132,7 +142,7 @@ public class TaskServiceImpl implements TaskService {
     Task task =
         taskRepository
             .findById(taskId)
-            .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
+            .orElseThrow(() -> new EntityNotFoundException("Task not found with id " + taskId));
 
     taskRepository.delete(task);
 
@@ -150,14 +160,20 @@ public class TaskServiceImpl implements TaskService {
   private User findUserById(Integer userId) {
     return userRepository
         .findById(userId)
-        .orElseThrow(() -> new IllegalArgumentException("User not found with id " + userId));
+        .orElseThrow(() -> new EntityNotFoundException("User not found with id " + userId));
+  }
+
+  private Project findProjectById(Integer projectId) {
+    return projectRepository
+        .findById(projectId)
+        .orElseThrow(() -> new EntityNotFoundException("Project not found with id " + projectId));
   }
 
   private Task findTaskById(Integer taskId) {
     Task task =
         taskRepository
             .findById(taskId)
-            .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + taskId));
+            .orElseThrow(() -> new EntityNotFoundException("Task not found with id " + taskId));
     task.setUsers(
         taskRepository.findTaskByIdWithUsers(taskId).map(Task::getUsers).orElse(new ArrayList<>()));
     task.setAttachments(

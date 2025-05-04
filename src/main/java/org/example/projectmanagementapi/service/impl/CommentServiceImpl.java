@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import jakarta.persistence.Cacheable;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.request.CommentRequestDto;
 import org.example.projectmanagementapi.dto.request.CommentUpdateRequest;
@@ -48,12 +49,12 @@ public class CommentServiceImpl implements CommentService {
     author.addComment(newComment);
 
     if (comment.getIssueId() != null) {
-      Issue issue = findIssueById(comment.getIssueId());
+      Issue issue = issueRepository.findById(comment.getIssueId()).orElseThrow(() -> new EntityNotFoundException("Issue not found with id " + comment.getIssueId()));
       issue.addComment(newComment);
     }
 
     if (comment.getTaskId() != null) {
-      Task task = findTaskById(comment.getTaskId());
+      Task task = taskRepository.findById(comment.getTaskId()).orElseThrow(() -> new EntityNotFoundException("Task not found with id " + comment.getTaskId()));
       task.addComment(newComment);
     }
 
@@ -79,6 +80,7 @@ public class CommentServiceImpl implements CommentService {
   @Override
   @CachePut(value = "comments", key = "#commentId")
   public CommentDto updateComment(Integer commentId, CommentUpdateRequest comment) {
+    User newAuthor = userRepository.findById(comment.getAuthorId()).orElseThrow(() -> new EntityNotFoundException("User not found with id " + comment.getAuthorId()));
 
     //    System.out.println(SecurityContextHolder.getContext().getAuthentication().getPrincipal());
     //    User currentUser = (User)
@@ -88,11 +90,12 @@ public class CommentServiceImpl implements CommentService {
     //      throw new IllegalArgumentException("User not found");
     //    }
     //
-    //    if (!currentUser.getId().equals(comment.getAuthorId())) {
+    //    if (!currentUser.getId().equals(newAuthor.getId())) {
     //      throw new IllegalArgumentException("You can only update your own comments");
     //    }
 
     Comment existingComment = findCommentById(commentId);
+
     existingComment.setContent(comment.getContent());
     existingComment.setUpdatedAt(LocalDate.now());
     existingComment.setIsEdited(true);
@@ -118,14 +121,14 @@ public class CommentServiceImpl implements CommentService {
   private User findUserById(Integer userId) {
     return userRepository
         .findById(userId)
-        .orElseThrow(() -> new IllegalArgumentException("User with id " + userId + " not found"));
+        .orElseThrow(() -> new EntityNotFoundException("User with id " + userId + " not found"));
   }
 
   private Comment findCommentById(Integer commentId) {
     return commentRepository
         .findById(commentId)
         .orElseThrow(
-            () -> new IllegalArgumentException("Comment with id " + commentId + " not found"));
+            () -> new EntityNotFoundException("Comment with id " + commentId + " not found"));
   }
 
   private Issue findIssueById(Integer issueId) {

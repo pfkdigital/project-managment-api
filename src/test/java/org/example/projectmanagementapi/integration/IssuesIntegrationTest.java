@@ -1,119 +1,262 @@
 package org.example.projectmanagementapi.integration;
 
+import org.example.projectmanagementapi.config.TestJpaConfig;
 import org.example.projectmanagementapi.dto.request.IssueRequestDto;
-import org.example.projectmanagementapi.dto.response.DetailedIssueDto;
-import org.example.projectmanagementapi.dto.response.IssueDto;
 import org.example.projectmanagementapi.enums.IssueStatus;
 import org.example.projectmanagementapi.enums.PriorityStatus;
-import org.example.projectmanagementapi.exception.ApiError;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.*;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
+import static org.junit.jupiter.api.Assertions.*;
 
-public class IssuesIntegrationTest extends BaseIntegration {
-  @Autowired private TestRestTemplate restTemplate;
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {"spring.main.allow-bean-definition-overriding=true"})
+@ActiveProfiles("test")
+@Import(TestJpaConfig.class)
+@DisplayName("Issue API Integration Tests")
+public class IssuesIntegrationTest {
 
-  @LocalServerPort private int port;
+  @Autowired
+  private TestRestTemplate restTemplate;
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testCreateIssue() {
-    String url = "http://localhost:" + port + "/api/v1/issues";
+  @LocalServerPort
+  private int port;
 
-    // Create an IssueRequestDto object and set its properties
-    IssueRequestDto issueRequestDto = new IssueRequestDto();
-    issueRequestDto.setTitle("Test Issue");
-    issueRequestDto.setDescription("Test Description");
-    issueRequestDto.setStatus(IssueStatus.OPEN);
-    issueRequestDto.setPriorityStatus(PriorityStatus.HIGH);
-    issueRequestDto.setProjectId(1);
-    issueRequestDto.setReportedById(1);
-    issueRequestDto.setAssignedToId(2);
-
-    // Send a POST request to create the issue
-    IssueDto response = restTemplate.postForObject(url, issueRequestDto, IssueDto.class);
-
-    // Assertions to verify the response
-    Assertions.assertNotNull(response);
-    Assertions.assertEquals("Test Issue", response.getTitle());
+  private String getBaseUrl() {
+    return "http://localhost:" + port + "/api/v1/issues";
   }
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testGetAllIssues() {
-    String url = "http://localhost:" + port + "/api/v1/issues";
-    IssueDto[] issues = restTemplate.getForObject(url, IssueDto[].class);
+  @Nested
+  @DisplayName("Issue CRUD Operations")
+  class IssueCrudTests {
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Create a new issue")
+    public void testCreateIssue() {
+      IssueRequestDto issueRequestDto = new IssueRequestDto();
+      issueRequestDto.setTitle("Test Issue");
+      issueRequestDto.setDescription("Test Description");
+      issueRequestDto.setStatus(IssueStatus.OPEN);
+      issueRequestDto.setPriorityStatus(PriorityStatus.HIGH);
+      issueRequestDto.setProjectId(1);
+      issueRequestDto.setReportedById(1);
+      issueRequestDto.setAssignedToId(2);
 
-    // Assertions to verify the response
-    Assertions.assertNotNull(issues);
-    Assertions.assertEquals(4, issues.length);
-    Assertions.assertEquals("Bug Fix A", issues[0].getTitle());
+      ResponseEntity<String> response = restTemplate.postForEntity(
+              getBaseUrl(), issueRequestDto, String.class);
+
+      assertEquals(HttpStatus.CREATED, response.getStatusCode());
+      assertTrue(response.getBody().contains("Test Issue"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Get all issues")
+    public void testGetAllIssues() {
+      ResponseEntity<String> response = restTemplate.getForEntity(
+              getBaseUrl(), String.class);
+
+      assertEquals(HttpStatus.OK, response.getStatusCode());
+      assertNotNull(response.getBody());
+
+      // Check for expected issues from data.sql
+      assertTrue(response.getBody().contains("Bug Fix A"));
+      assertTrue(response.getBody().contains("UI Enhancement"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Get issue by ID")
+    public void testGetIssueById() {
+      ResponseEntity<String> response = restTemplate.getForEntity(
+              getBaseUrl() + "/1", String.class);
+
+      assertEquals(HttpStatus.OK, response.getStatusCode());
+      assertNotNull(response.getBody());
+      assertTrue(response.getBody().contains("Bug Fix A"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Update an issue")
+    public void testUpdateIssue() {
+      IssueRequestDto issueRequestDto = new IssueRequestDto();
+      issueRequestDto.setTitle("Updated Issue");
+      issueRequestDto.setDescription("Updated Description");
+      issueRequestDto.setStatus(IssueStatus.IN_PROGRESS);
+      issueRequestDto.setPriorityStatus(PriorityStatus.MEDIUM);
+      issueRequestDto.setProjectId(1);
+      issueRequestDto.setReportedById(1);
+      issueRequestDto.setAssignedToId(2);
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      HttpEntity<IssueRequestDto> request = new HttpEntity<>(issueRequestDto, headers);
+
+      ResponseEntity<String> putResponse = restTemplate.exchange(
+              getBaseUrl() + "/1",
+              HttpMethod.PUT,
+              request,
+              String.class
+      );
+
+      assertEquals(HttpStatus.OK, putResponse.getStatusCode());
+
+      // Verify the update
+      ResponseEntity<String> getResponse = restTemplate.getForEntity(
+              getBaseUrl() + "/1", String.class);
+
+      assertTrue(getResponse.getBody().contains("Updated Issue"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Delete an issue")
+    public void testDeleteIssue() {
+      ResponseEntity<Void> deleteResponse = restTemplate.exchange(
+              getBaseUrl() + "/1",
+              HttpMethod.DELETE,
+              null,
+              Void.class
+      );
+
+      assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getStatusCode());
+
+      // Verify issue is deleted
+      ResponseEntity<String> getResponse = restTemplate.getForEntity(
+              getBaseUrl() + "/1", String.class);
+
+      assertTrue(getResponse.getStatusCode().is4xxClientError());
+    }
   }
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testGetIssueById() {
-    String url = "http://localhost:" + port + "/api/v1/issues/1";
-    DetailedIssueDto issueDto = restTemplate.getForObject(url, DetailedIssueDto.class);
-    System.out.println(issueDto);
-    // Assertions to verify the response
-    Assertions.assertNotNull(issueDto);
-    Assertions.assertEquals("Bug Fix A", issueDto.getTitle());
+  @Nested
+  @DisplayName("Issue Error Scenarios")
+  class IssueErrorTests {
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Get non-existent issue")
+    public void testGetNonExistentIssue() {
+      ResponseEntity<String> response = restTemplate.getForEntity(
+              getBaseUrl() + "/999", String.class);
+
+      assertTrue(response.getStatusCode().is4xxClientError());
+      assertTrue(response.getBody().contains("not found"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Create issue with invalid data")
+    public void testCreateIssueWithInvalidData() {
+      IssueRequestDto invalidIssue = new IssueRequestDto();
+      // Missing required fields
+
+      ResponseEntity<String> response = restTemplate.postForEntity(
+              getBaseUrl(), invalidIssue, String.class);
+
+      assertTrue(response.getStatusCode().is4xxClientError());
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Update issue with non-existent project ID")
+    public void testUpdateIssueWithInvalidProjectId() {
+      IssueRequestDto issueRequestDto = new IssueRequestDto();
+      issueRequestDto.setTitle("Updated Issue");
+      issueRequestDto.setDescription("Updated Description");
+      issueRequestDto.setStatus(IssueStatus.IN_PROGRESS);
+      issueRequestDto.setPriorityStatus(PriorityStatus.MEDIUM);
+      issueRequestDto.setProjectId(999); // Non-existent project
+      issueRequestDto.setReportedById(1);
+      issueRequestDto.setAssignedToId(2);
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      HttpEntity<IssueRequestDto> request = new HttpEntity<>(issueRequestDto, headers);
+
+      ResponseEntity<String> response = restTemplate.exchange(
+              getBaseUrl() + "/1",
+              HttpMethod.PUT,
+              request,
+              String.class
+      );
+      System.out.println(response);
+      assertTrue(response.getStatusCode().is4xxClientError());
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Update issue with non-existent user ID")
+    public void testUpdateIssueWithInvalidUserId() {
+      IssueRequestDto issueRequestDto = new IssueRequestDto();
+      issueRequestDto.setTitle("Updated Issue");
+      issueRequestDto.setDescription("Updated Description");
+      issueRequestDto.setStatus(IssueStatus.IN_PROGRESS);
+      issueRequestDto.setPriorityStatus(PriorityStatus.MEDIUM);
+      issueRequestDto.setProjectId(1);
+      issueRequestDto.setReportedById(1);
+      issueRequestDto.setAssignedToId(999); // Non-existent user
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      HttpEntity<IssueRequestDto> request = new HttpEntity<>(issueRequestDto, headers);
+
+      ResponseEntity<String> response = restTemplate.exchange(
+              getBaseUrl() + "/1",
+              HttpMethod.PUT,
+              request,
+              String.class
+      );
+
+      assertTrue(response.getStatusCode().is4xxClientError());
+    }
   }
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testGetIssueWhenNotFound() {
-    String url = "http://localhost:" + port + "/api/v1/issues/1000";
-    String errorMessage = "Issue with id 1000 not found";
+  @Nested
+  @DisplayName("Issue Edge Cases")
+  class IssueEdgeCases {
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Update issue with same data")
+    public void testUpdateIssueWithSameData() {
+      // First, get current issue data
+      ResponseEntity<String> getResponse = restTemplate.getForEntity(
+              getBaseUrl() + "/1", String.class);
 
-    ApiError error = restTemplate.getForObject(url, ApiError.class);
-    // Assertions to verify the response
-    Assertions.assertNotNull(error);
-    Assertions.assertEquals(errorMessage, error.getMessage());
-  }
+      String originalBody = getResponse.getBody();
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testDeleteIssue() {
-    String url = "http://localhost:" + port + "/api/v1/issues/1";
+      // Create update DTO with the same data
+      IssueRequestDto issueRequestDto = new IssueRequestDto();
+      issueRequestDto.setTitle("Bug Fix A");
+      issueRequestDto.setDescription("Fix a critical bug in system");
+      issueRequestDto.setStatus(IssueStatus.OPEN);
+      issueRequestDto.setPriorityStatus(PriorityStatus.HIGH);
+      issueRequestDto.setProjectId(1);
+      issueRequestDto.setReportedById(1);
+      issueRequestDto.setAssignedToId(2);
 
-    // Send a DELETE request to delete the issue
-    restTemplate.delete(url);
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      HttpEntity<IssueRequestDto> request = new HttpEntity<>(issueRequestDto, headers);
 
-    // Verify that the issue is deleted by trying to fetch it
-    ApiError issueDto = restTemplate.getForObject(url, ApiError.class);
-    Assertions.assertNotNull(issueDto);
-    Assertions.assertEquals("Issue with id 1 not found", issueDto.getMessage());
-  }
+      ResponseEntity<String> putResponse = restTemplate.exchange(
+              getBaseUrl() + "/1",
+              HttpMethod.PUT,
+              request,
+              String.class
+      );
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testUpdateIssue() {
-    String url = "http://localhost:" + port + "/api/v1/issues/1";
-
-    // Create an IssueRequestDto object and set its properties
-    IssueRequestDto issueRequestDto = new IssueRequestDto();
-    issueRequestDto.setTitle("Updated Issue");
-    issueRequestDto.setDescription("Updated Description");
-    issueRequestDto.setStatus(IssueStatus.IN_PROGRESS);
-    issueRequestDto.setPriorityStatus(PriorityStatus.MEDIUM);
-    issueRequestDto.setProjectId(1);
-    issueRequestDto.setReportedById(1);
-    issueRequestDto.setAssignedToId(2);
-
-    // Send a PUT request to update the issue
-    restTemplate.put(url, issueRequestDto, DetailedIssueDto.class);
-
-    // Fetch the updated issue
-    DetailedIssueDto response = restTemplate.getForObject(url, DetailedIssueDto.class);
-
-    // Assertions to verify the response
-    Assertions.assertNotNull(response);
-    Assertions.assertEquals("Updated Issue", response.getTitle());
+      assertEquals(HttpStatus.OK, putResponse.getStatusCode());
+    }
   }
 }

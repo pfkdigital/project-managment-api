@@ -41,21 +41,26 @@ public class User implements UserDetails {
   @Column(name = "display_image_url")
   private String displayImageUrl;
 
+  @Builder.Default
   @Column(name = "enabled", nullable = false)
-  private boolean enabled = true;
+  private boolean enabled = false;
 
+  @Builder.Default
   @Column(name = "account_non_expired", nullable = false)
   private boolean accountNonExpired = true;
 
+  @Builder.Default
   @Column(name = "account_non_locked", nullable = false)
   private boolean accountNonLocked = true;
 
+  @Builder.Default
   @Column(name = "credentials_non_expired", nullable = false)
   private boolean credentialsNonExpired = true;
 
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
   @JsonIgnore
   private VerificationToken verificationToken;
+
 
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
   @JsonIgnore
@@ -165,22 +170,33 @@ public class User implements UserDetails {
   }
 
   @Override
+  public String getUsername() {
+    return username;
+  }
+
+  @Override
+  public String getPassword() {
+    return password;
+  }
+
+  @Override
   public boolean isAccountNonExpired() {
-    return true;
+    return accountNonExpired;
   }
 
   @Override
   public boolean isAccountNonLocked() {
-    return true;
+    return accountNonLocked;
   }
 
   @Override
   public boolean isCredentialsNonExpired() {
-    return true;
+    return credentialsNonExpired;
   }
 
   @Override
   public boolean isEnabled() {
-    return false;
+    return enabled;
   }
+
 }

@@ -2,6 +2,8 @@ package org.example.projectmanagementapi.service.impl;
 
 import java.time.LocalDate;
 import java.util.Arrays;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.response.AttachmentDto;
 import org.example.projectmanagementapi.entity.Attachment;
@@ -47,7 +49,7 @@ public class AttachmentServiceImpl implements AttachmentService {
   public AttachmentDto createAttachmentForTask(MultipartFile file, Integer taskId) {
     validateFile(file);
     Task task =
-        taskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("Task not found"));
+        taskRepository.findById(taskId).orElseThrow(() -> new EntityNotFoundException("Task not found with id " + taskId));
     Attachment attachment = createAndSaveAttachment(file, "tasks/" + taskId);
     task.addAttachment(attachment);
     taskRepository.save(task);
@@ -60,7 +62,7 @@ public class AttachmentServiceImpl implements AttachmentService {
     Issue issue =
         issueRepository
             .findById(issueId)
-            .orElseThrow(() -> new RuntimeException("Issue not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Issue not found with id " + issueId));
     Attachment attachment = createAndSaveAttachment(file, "issues/" + issueId);
     issue.addAttachment(attachment);
     issueRepository.save(issue);
@@ -72,7 +74,7 @@ public class AttachmentServiceImpl implements AttachmentService {
     Attachment attachment =
         attachmentRepository
             .findById(attachmentId)
-            .orElseThrow(() -> new RuntimeException("Attachment not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Attachment not found with id " + attachmentId));
     String key =
         "attachments/"
             + (attachment.getTask() != null ? "tasks/" : "issues/")
@@ -91,7 +93,7 @@ public class AttachmentServiceImpl implements AttachmentService {
     // User currentUser = (User)
     // SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     User user =
-        userRepository.findById(1).orElseThrow(() -> new RuntimeException("User not found"));
+        userRepository.findById(1).orElseThrow(() -> new EntityNotFoundException("User not found with id 1")); // Hardcoded for now
     Attachment attachment =
         Attachment.builder()
             .fileName(file.getOriginalFilename())

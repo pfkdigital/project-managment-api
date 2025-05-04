@@ -16,6 +16,7 @@ public class AmazonSESServiceImpl implements AmazonSESService {
   @Override
   public void sendEmail(String to, String subject, String body) {
     try {
+
       Destination destination = Destination.builder().toAddresses(to).build();
 
       Content subjectContent = Content.builder().data(subject).build();
@@ -24,10 +25,11 @@ public class AmazonSESServiceImpl implements AmazonSESService {
 
       Message message = Message.builder().subject(subjectContent).body(bodyContent).build();
       SendEmailRequest request =
-          SendEmailRequest.builder().destination(destination).message(message).build();
+          SendEmailRequest.builder().source("noah@pfkdigital.co.uk").destination(destination).message(message).build();
 
       sesClient.sendEmail(request);
     } catch (AwsServiceException | SdkClientException | UnsupportedOperationException e) {
+      System.out.println("Error sending email: " + e.getMessage());
       throw new RuntimeException("Failed to send email", e);
     }
   }

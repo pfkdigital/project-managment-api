@@ -1,12 +1,10 @@
 package org.example.projectmanagementapi.service.impl;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.example.projectmanagementapi.dto.request.ForgotPasswordDto;
-import org.example.projectmanagementapi.dto.request.LoginRequestDto;
-import org.example.projectmanagementapi.dto.request.RegisterRequestDto;
-import org.example.projectmanagementapi.dto.request.ResetPasswordRequestDto;
+import org.example.projectmanagementapi.dto.request.*;
 import org.example.projectmanagementapi.dto.response.UserInformationDto;
 import org.example.projectmanagementapi.entity.PasswordResetToken;
 import org.example.projectmanagementapi.entity.User;
@@ -56,7 +54,7 @@ public class AuthServiceImpl implements AuthService {
         User.builder()
             .email(registerRequestDto.getEmail())
             .username(registerRequestDto.getUsername())
-            .password(registerRequestDto.getPassword())
+            .password(passwordEncoder.encode(registerRequestDto.getPassword()))
             .role(Role.USER)
             .enabled(false)
             .build();
@@ -73,11 +71,11 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public void verifyAccount(String token) {
+  public void verifyAccount(VerificationCodeDto verificationCodeDto) {
     VerificationToken verificationToken =
         verificationTokenRepository
-            .findByToken(token)
-            .orElseThrow(() -> new IllegalArgumentException("Token not found"));
+            .findByToken(verificationCodeDto.getCode())
+            .orElseThrow(() -> new EntityNotFoundException("Token not found with code " + verificationCodeDto.getCode()));
 
     User derivedUser = verificationToken.getUser();
 
@@ -94,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
     User user =
             userRepository
                     .findByUsername(loginRequestDto.getUsername())
-                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                    .orElseThrow(() -> new EntityNotFoundException("User not found with username " + loginRequestDto.getUsername()));
 
     if (!user.isEnabled()) {
       throw new IllegalArgumentException("User is not verified");
@@ -129,7 +127,7 @@ public class AuthServiceImpl implements AuthService {
     User user =
         userRepository
             .findByEmail(forgotPasswordDto.getEmail())
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new EntityNotFoundException("User not found with email " + forgotPasswordDto.getEmail()));
 
     String resetToken = tokenUtility.generateToken();
     PasswordResetToken newPasswordResetToken =
@@ -144,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
     PasswordResetToken passwordResetToken =
         passwordResetTokenRepository
             .findByToken(token)
-            .orElseThrow(() -> new IllegalArgumentException("Token not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Token not found"));
 
     User user = passwordResetToken.getUser();
 

@@ -2,6 +2,8 @@ package org.example.projectmanagementapi.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.request.IssueRequestDto;
 import org.example.projectmanagementapi.dto.response.DetailedIssueDto;
@@ -77,8 +79,14 @@ public class IssueServiceImpl implements IssueService {
     Issue selectedIssue =
         issueRepository
             .findById(issueId)
-            .orElseThrow(() -> new RuntimeException("Issue with id " + issueId + " not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Issue with id " + issueId + " not found"));
+    Project project = findProjectById(issueRequestDto.getProjectId());
     User assignedToUser = findUserById(issueRequestDto.getAssignedToId());
+
+    if (selectedIssue.getProject().getId().equals(project.getId())) {
+      project.removeIssue(selectedIssue);
+      project.addIssue(selectedIssue);
+    }
 
     selectedIssue.setTitle(issueRequestDto.getTitle());
     selectedIssue.setDescription(issueRequestDto.getDescription());
@@ -100,7 +108,7 @@ public class IssueServiceImpl implements IssueService {
     Issue selectedIssue =
         issueRepository
             .findById(issueId)
-            .orElseThrow(() -> new RuntimeException("Issue with id " + issueId + " not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Issue with id " + issueId + " not found"));
 
     notificationService.createNotification(
         "Issue " + selectedIssue.getId() + " has been deleted", NotificationType.DESTRUCTION);
@@ -111,20 +119,20 @@ public class IssueServiceImpl implements IssueService {
   private User findUserById(Integer userId) {
     return userRepository
         .findById(userId)
-        .orElseThrow(() -> new RuntimeException("User with id " + userId + " not found"));
+        .orElseThrow(() -> new EntityNotFoundException("User with id " + userId + " not found"));
   }
 
   private Project findProjectById(Integer projectId) {
     return projectRepository
         .findById(projectId)
-        .orElseThrow(() -> new RuntimeException("Project with id " + projectId + " not found"));
+        .orElseThrow(() -> new EntityNotFoundException("Project with id " + projectId + " not found"));
   }
 
   private Issue findIssueById(Integer issueId) {
     Issue issue =
         issueRepository
             .findById(issueId)
-            .orElseThrow(() -> new RuntimeException("Issue with id " + issueId + " not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Issue with id " + issueId + " not found"));
 
     issue.setComments(
         issueRepository

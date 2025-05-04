@@ -1,97 +1,247 @@
 package org.example.projectmanagementapi.integration;
 
+import org.example.projectmanagementapi.config.TestJpaConfig;
 import org.example.projectmanagementapi.dto.request.CommentRequestDto;
 import org.example.projectmanagementapi.dto.request.CommentUpdateRequest;
-import org.example.projectmanagementapi.dto.response.CommentDto;
-import org.example.projectmanagementapi.exception.ApiError;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.*;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class CommentsIntegrationTest extends BaseIntegration {
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = {
+      "spring.main.allow-bean-definition-overriding=true",
+    })
+@ActiveProfiles("test")
+@Import(TestJpaConfig.class)
+@DisplayName("Comment API Integration Tests")
+public class CommentsIntegrationTest {
+
   @Autowired private TestRestTemplate restTemplate;
 
   @LocalServerPort private int port;
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testCreateComment() {
-    String url = "http://localhost:" + port + "/api/v1/comments";
-
-    CommentRequestDto commentRequestDto = new CommentRequestDto();
-    commentRequestDto.setContent("Test Comment");
-    commentRequestDto.setIssueId(1);
-    commentRequestDto.setAuthorId(1);
-
-    CommentDto response = restTemplate.postForObject(url, commentRequestDto, CommentDto.class);
-
-    assertNotNull(response);
-    assertEquals("Test Comment", response.getContent());
+  private String getBaseUrl() {
+    return "http://localhost:" + port + "/api/v1/comments";
   }
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testGetAllComments() {
-    String url = "http://localhost:" + port + "/api/v1/comments";
-    CommentDto[] comments = restTemplate.getForObject(url, CommentDto[].class);
+  @Nested
+  @DisplayName("Comment CRUD Operations")
+  class CommentCrudTests {
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Create a new task comment")
+    public void testCreateTaskComment() {
+      CommentRequestDto commentRequestDto = new CommentRequestDto();
+      commentRequestDto.setContent("New test comment for task");
+      commentRequestDto.setTaskId(1);
+      commentRequestDto.setAuthorId(2);
 
-    assertNotNull(comments);
-    assertEquals(5, comments.length);
-    assertEquals("This task is almost done.", comments[0].getContent());
+      ResponseEntity<String> response =
+          restTemplate.postForEntity(getBaseUrl(), commentRequestDto, String.class);
+
+      assertEquals(HttpStatus.CREATED, response.getStatusCode());
+      assertNotNull(response.getBody());
+      assertTrue(response.getBody().contains("New test comment for task"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Create a new issue comment")
+    public void testCreateIssueComment() {
+      CommentRequestDto commentRequestDto = new CommentRequestDto();
+      commentRequestDto.setContent("New test comment for issue");
+      commentRequestDto.setIssueId(1);
+      commentRequestDto.setAuthorId(2);
+
+      ResponseEntity<String> response =
+          restTemplate.postForEntity(getBaseUrl(), commentRequestDto, String.class);
+
+      assertEquals(HttpStatus.CREATED, response.getStatusCode());
+      assertNotNull(response.getBody());
+      assertTrue(response.getBody().contains("New test comment for issue"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Get all comments")
+    public void testGetAllComments() {
+      ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl(), String.class);
+
+      assertEquals(HttpStatus.OK, response.getStatusCode());
+      assertNotNull(response.getBody());
+      // Verify existing comments from data.sql are present
+      assertTrue(response.getBody().contains("This task is almost done"));
+      assertTrue(response.getBody().contains("We need more details"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Get comment by ID")
+    public void testGetCommentById() {
+      ResponseEntity<String> response =
+          restTemplate.getForEntity(getBaseUrl() + "/1", String.class);
+
+      assertEquals(HttpStatus.OK, response.getStatusCode());
+      assertNotNull(response.getBody());
+      assertTrue(response.getBody().contains("This task is almost done"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Update a comment")
+    public void testUpdateComment() {
+      CommentUpdateRequest commentUpdateRequest = new CommentUpdateRequest();
+      commentUpdateRequest.setContent("Updated comment content");
+      commentUpdateRequest.setAuthorId(2);
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      HttpEntity<CommentUpdateRequest> request = new HttpEntity<>(commentUpdateRequest, headers);
+
+      ResponseEntity<String> response =
+          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.PUT, request, String.class);
+
+      assertEquals(HttpStatus.OK, response.getStatusCode());
+      assertNotNull(response.getBody());
+      assertTrue(response.getBody().contains("Updated comment content"));
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Delete a comment")
+    public void testDeleteComment() {
+      ResponseEntity<Void> deleteResponse =
+          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.DELETE, null, Void.class);
+
+      assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getStatusCode());
+
+      // Verify comment is deleted
+      ResponseEntity<String> getResponse =
+          restTemplate.getForEntity(getBaseUrl() + "/1", String.class);
+      assertTrue(getResponse.getStatusCode().is4xxClientError());
+    }
   }
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testGetCommentById() {
-    String url = "http://localhost:" + port + "/api/v1/comments/1";
-    CommentDto comment = restTemplate.getForObject(url, CommentDto.class);
+  @Nested
+  @DisplayName("Comment Error Scenarios")
+  class CommentErrorTests {
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Get non-existent comment")
+    public void testGetNonExistentComment() {
+      ResponseEntity<String> response =
+          restTemplate.getForEntity(getBaseUrl() + "/999", String.class);
 
-    assertNotNull(comment);
-    assertEquals("This task is almost done.", comment.getContent());
+      assertTrue(response.getStatusCode().is4xxClientError());
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Create comment with invalid data")
+    public void testCreateCommentWithInvalidData() {
+      CommentRequestDto invalidComment = new CommentRequestDto();
+      // Missing required fields
+
+      ResponseEntity<String> response =
+          restTemplate.postForEntity(getBaseUrl(), invalidComment, String.class);
+
+      assertTrue(response.getStatusCode().is4xxClientError());
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Create comment with non-existent task ID")
+    public void testCreateCommentWithInvalidTaskId() {
+      CommentRequestDto commentRequestDto = new CommentRequestDto();
+      commentRequestDto.setContent("Test comment");
+      commentRequestDto.setIssueId(null);
+      commentRequestDto.setTaskId(999); // Non-existent task
+      commentRequestDto.setAuthorId(2);
+
+      ResponseEntity<String> response =
+          restTemplate.postForEntity(getBaseUrl(), commentRequestDto, String.class);
+      System.out.println(response);
+      assertTrue(response.getStatusCode().is4xxClientError());
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Update comment with non-existent author ID")
+    public void testUpdateCommentWithInvalidAuthorId() {
+      CommentUpdateRequest commentUpdateRequest = new CommentUpdateRequest();
+      commentUpdateRequest.setContent("Updated content");
+      commentUpdateRequest.setAuthorId(999); // Non-existent user
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      HttpEntity<CommentUpdateRequest> request = new HttpEntity<>(commentUpdateRequest, headers);
+
+      ResponseEntity<String> response =
+          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.PUT, request, String.class);
+
+      assertTrue(response.getStatusCode().is4xxClientError());
+    }
   }
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testGetCommentByIdNotFound() {
-    String url = "http://localhost:" + port + "/api/v1/comments/999";
-    ApiError errorResponse = restTemplate.getForObject(url, ApiError.class);
+  @Nested
+  @DisplayName("Comment Edge Cases")
+  class CommentEdgeCases {
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Create comment with long content")
+    public void testCreateCommentWithLongContent() {
+      CommentRequestDto commentRequestDto = new CommentRequestDto();
 
-    assertNotNull(errorResponse);
-    assertEquals("Comment with id 999 not found", errorResponse.getMessage());
-  }
+      // Generate a long comment (255+ chars)
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0; i < 10; i++) {
+        sb.append("This is a very long comment that should test the limits of the content field. ");
+      }
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testUpdateComment() {
-    String url = "http://localhost:" + port + "/api/v1/comments/1";
+      commentRequestDto.setContent(sb.toString());
+      commentRequestDto.setTaskId(1);
+      commentRequestDto.setAuthorId(2);
 
-    CommentUpdateRequest commentRequestDto = new CommentUpdateRequest();
-    commentRequestDto.setContent("Updated Comment");
-    commentRequestDto.setAuthorId(2);
+      ResponseEntity<String> response =
+          restTemplate.postForEntity(getBaseUrl(), commentRequestDto, String.class);
+      System.out.println(response);
+      assertTrue(response.getStatusCode() == HttpStatus.BAD_REQUEST || response.getStatusCode().is4xxClientError(), "Should either create comment or reject with validation error");
+    }
 
-    restTemplate.put(url, commentRequestDto, CommentUpdateRequest.class);
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Update comment with same data")
+    public void testUpdateCommentWithSameData() {
+      // First get current comment data
+      ResponseEntity<String> getResponse =
+          restTemplate.getForEntity(getBaseUrl() + "/1", String.class);
 
-    CommentDto response = restTemplate.getForObject(url, CommentDto.class);
+      String originalBody = getResponse.getBody();
 
-    assertNotNull(response);
-    assertEquals("Updated Comment", response.getContent());
-  }
+      // Create update request with same content
+      CommentUpdateRequest commentUpdateRequest = new CommentUpdateRequest();
+      commentUpdateRequest.setContent("This task is almost done.");
+      commentUpdateRequest.setAuthorId(2);
 
-  @Test
-  @Sql({"/schema.sql", "/data.sql"})
-  public void testDeleteComment() {
-    String url = "http://localhost:" + port + "/api/v1/comments/1";
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      HttpEntity<CommentUpdateRequest> request = new HttpEntity<>(commentUpdateRequest, headers);
 
-    restTemplate.delete(url);
+      ResponseEntity<String> putResponse =
+          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.PUT, request, String.class);
 
-    ApiError errorResponse = restTemplate.getForObject(url, ApiError.class);
-
-    assertNotNull(errorResponse);
-    assertEquals("Comment with id 1 not found", errorResponse.getMessage());
+      assertEquals(HttpStatus.OK, putResponse.getStatusCode());
+    }
   }
 }

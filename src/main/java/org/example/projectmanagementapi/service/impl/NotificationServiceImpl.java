@@ -2,6 +2,8 @@ package org.example.projectmanagementapi.service.impl;
 
 import java.time.LocalDate;
 import java.util.List;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.config.WebSocketHandler;
 import org.example.projectmanagementapi.dto.response.NotificationDto;
@@ -34,7 +36,8 @@ public class NotificationServiceImpl implements NotificationService {
   public Notification getNotificationById(Integer id) {
     return notificationRepository
         .findById(id)
-        .orElseThrow(() -> new RuntimeException("Notification with id " + id + " not found"));
+        .orElseThrow(
+            () -> new EntityNotFoundException("Notification with id " + id + " not found"));
   }
 
   @Override
@@ -42,7 +45,7 @@ public class NotificationServiceImpl implements NotificationService {
     Notification notification =
         notificationRepository
             .findById(id)
-            .orElseThrow(() -> new RuntimeException("Notification with id " + id + " not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Notification with id " + id + " not found"));
     notificationRepository.delete(notification);
   }
 
@@ -51,7 +54,7 @@ public class NotificationServiceImpl implements NotificationService {
     Notification notification =
         notificationRepository
             .findById(id)
-            .orElseThrow(() -> new RuntimeException("Notification with id " + id + " not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Notification with id " + id + " not found"));
     notification.setIsRead(status);
     return notificationRepository.save(notification);
   }

@@ -2,6 +2,8 @@ package org.example.projectmanagementapi.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
 import org.example.projectmanagementapi.dto.request.ProjectRequestDto;
@@ -73,7 +75,7 @@ public class ProjectServiceImpl implements ProjectService {
     Project selectedProject =
         projectRepository
             .findById(projectId)
-            .orElseThrow(() -> new RuntimeException("Project not found with id " + projectId));
+            .orElseThrow(() -> new EntityNotFoundException("Project not found with id " + projectId));
     selectedProject.setName(projectRequestDto.getName());
     selectedProject.setDescription(projectRequestDto.getDescription());
     selectedProject.setDisplayImageUrl(projectRequestDto.getDisplayImageUrl());
@@ -146,7 +148,7 @@ public class ProjectServiceImpl implements ProjectService {
     Project project =
         projectRepository
             .findById(projectId)
-            .orElseThrow(() -> new RuntimeException("Project not found with id " + projectId));
+            .orElseThrow(() -> new EntityNotFoundException("Project not found with id " + projectId));
 
     project.setOwner(
         projectRepository.findProjectWithOwnerById(projectId).map(Project::getOwner).orElse(null));
@@ -175,6 +177,6 @@ public class ProjectServiceImpl implements ProjectService {
   private User findUserById(Integer userId) {
     return userRepository
         .findById(userId)
-        .orElseThrow(() -> new RuntimeException("User not found of id " + userId));
+        .orElseThrow(() -> new EntityNotFoundException("User not found of id " + userId));
   }
 }

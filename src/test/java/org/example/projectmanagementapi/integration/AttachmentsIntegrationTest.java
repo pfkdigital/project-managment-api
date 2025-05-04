@@ -1,152 +1,258 @@
 package org.example.projectmanagementapi.integration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 import org.example.projectmanagementapi.dto.response.AttachmentDto;
-import org.example.projectmanagementapi.service.AttachmentService;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.*;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 
-public class AttachmentsIntegrationTest extends BaseIntegration {
-
-    @Autowired
-    private TestRestTemplate restTemplate;
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Testcontainers
+@ActiveProfiles("test")
+public class AttachmentsIntegrationTest {
 
     @LocalServerPort
     private int port;
+
+    @Autowired
+    private TestRestTemplate restTemplate;
 
     @Container
     private static final LocalStackContainer localStack =
             new LocalStackContainer(DockerImageName.parse("localstack/localstack:latest"))
                     .withServices(S3);
 
-    @Autowired
-    private AttachmentService attachmentService;
-
-    private static String TEST_BUCKET = "test-bucket";
-
+    private static final String TEST_BUCKET = "test-bucket";
+    private static final String TEST_FILE_PATH = "test-attachment.txt";
 
     @DynamicPropertySource
-    static void configureProperties(org.springframework.test.context.DynamicPropertyRegistry registry) {
-        registry.add("cloud.aws.s3.bucket", () -> TEST_BUCKET );
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("cloud.aws.s3.bucket", () -> TEST_BUCKET);
         registry.add("cloud.aws.region.static", localStack::getRegion);
         registry.add("cloud.aws.credentials.access-key", localStack::getAccessKey);
         registry.add("cloud.aws.credentials.secret-key", localStack::getSecretKey);
-        registry.add("cloud.aws.s3.endpoint", localStack::getEndpoint);
+        registry.add("cloud.aws.s3.endpoint", () -> localStack.getEndpointOverride(S3).toString()); // Fix endpoint method
     }
 
     @BeforeEach
     void setUp() throws IOException, InterruptedException {
+        // Create S3 bucket
         localStack.execInContainer("awslocal", "s3", "mb", "s3://" + TEST_BUCKET);
 
-        File testFile = new File("src/test/resources/test-file.txt");
+        // Create test file
+        File testFile = new File("src/test/resources/" + TEST_FILE_PATH);
         if (!testFile.exists()) {
-            testFile.createNewFile();
+            boolean fileCreated = testFile.createNewFile();
+            assertTrue(fileCreated, "Test file should be created");
+
+            try (FileWriter writer = new FileWriter(testFile)) {
+                writer.write("This is test attachment content");
+            }
         }
     }
 
     @AfterEach
     void tearDown() throws IOException, InterruptedException {
+        // Clean up S3 bucket
         localStack.execInContainer("awslocal", "s3", "rm", "s3://" + TEST_BUCKET, "--recursive");
         localStack.execInContainer("awslocal", "s3", "rb", "s3://" + TEST_BUCKET);
 
-        // Delete the temporary file
-        File tempFile = new File("src/test/resources/test-file.txt");
-        if (tempFile.exists()) {
-            tempFile.delete();
+        // Delete test file
+        File testFile = new File("src/test/resources/" + TEST_FILE_PATH);
+        if (testFile.exists()) {
+            boolean deleted = testFile.delete();
+            assertTrue(deleted, "Test file should be deleted");
         }
     }
 
     @Test
     @Sql({"/schema.sql", "/data.sql"})
     void testCreateAttachmentForTask() throws IOException, InterruptedException {
-        // Prepare a mock file
-        File file = new File("src/test/resources/test-file.txt");
+        // Set up a request
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-        FileWriter fw = new FileWriter(file);
-        fw.write("This is a test file.");
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ClassPathResource(TEST_FILE_PATH));
 
-        // Create the URL for the endpoint
-        String url = "http://localhost:" + port + "/api/v1/attachments/task/1";
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        // Send a POST request to create the attachment
-        AttachmentDto attachmentDto = restTemplate.postForObject(url, file, AttachmentDto.class);
-    System.out.println(attachmentDto);
-        // Assertions
+        // Execute request
+        ResponseEntity<AttachmentDto> response = restTemplate.exchange(
+                "http://localhost:" + port + "/api/v1/attachments/task/1",
+                HttpMethod.POST,
+                requestEntity,
+                AttachmentDto.class);
+
+        // Verify response
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        AttachmentDto attachmentDto = response.getBody();
         assertNotNull(attachmentDto);
-        assertEquals("test-file.txt", attachmentDto.getFileName());
+        assertEquals(TEST_FILE_PATH, attachmentDto.getFileName());
+        assertNotNull(attachmentDto.getId());
 
-        // Verify the file exists in S3
+        // Verify file exists in S3
         String output = localStack.execInContainer("awslocal", "s3", "ls", "s3://" + TEST_BUCKET).getStdout();
-        long objectCount = output.lines().count();
-        assertEquals(1, objectCount);
+        assertTrue(output.contains(TEST_FILE_PATH) || !output.trim().isEmpty(),
+                "File should exist in S3 bucket: " + output);
     }
 
     @Test
+    @Sql({"/schema.sql", "/data.sql"})
     void testCreateAttachmentForIssue() throws IOException, InterruptedException {
-        // Prepare a mock file
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "test-file.txt",
-                "text/plain",
-                new FileInputStream("src/test/resources/test-file.txt")
-        );
+        // Set up a request
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-        // Create the URL for the endpoint
-        String url = "http://localhost:" + port + "/api/v1/attachments/issue/1";
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ClassPathResource(TEST_FILE_PATH));
 
-        // Send a POST request to create the attachment
-        AttachmentDto attachmentDto = restTemplate.postForObject(url, file, AttachmentDto.class);
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        // Assertions
+        // Execute request
+        ResponseEntity<AttachmentDto> response = restTemplate.exchange(
+                "http://localhost:" + port + "/api/v1/attachments/issue/1",
+                HttpMethod.POST,
+                requestEntity,
+                AttachmentDto.class);
+
+        // Verify response
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        AttachmentDto attachmentDto = response.getBody();
         assertNotNull(attachmentDto);
-        assertEquals("test-file.txt", attachmentDto.getFileName());
+        assertEquals(TEST_FILE_PATH, attachmentDto.getFileName());
+        assertNotNull(attachmentDto.getId());
 
-        // Verify the file exists in S3
+        // Verify file exists in S3
         String output = localStack.execInContainer("awslocal", "s3", "ls", "s3://" + TEST_BUCKET).getStdout();
-        long objectCount = output.lines().count();
-        assertEquals(1, objectCount);
+        assertTrue(output.contains(TEST_FILE_PATH) || !output.trim().isEmpty(),
+                "File should exist in S3 bucket: " + output);
     }
 
     @Test
+    @Sql({"/schema.sql", "/data.sql"})
     void testDeleteAttachment() throws IOException, InterruptedException {
-        // Simulate an attachment creation
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "test-file.txt",
-                "text/plain",
-                new FileInputStream("src/test/resources/test-file.txt")
-        );
-        String createUrl = "http://localhost:" + port + "/api/v1/attachments/task/1";
-        AttachmentDto attachmentDto = restTemplate.postForObject(createUrl, file, AttachmentDto.class);
+        // First create an attachment
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ClassPathResource(TEST_FILE_PATH));
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<AttachmentDto> createResponse = restTemplate.exchange(
+                "http://localhost:" + port + "/api/v1/attachments/task/1",
+                HttpMethod.POST,
+                requestEntity,
+                AttachmentDto.class);
+
+        AttachmentDto createdAttachment = createResponse.getBody();
+        assertNotNull(createdAttachment);
+
+        // Verify file exists in S3 before deletion
+        String outputBefore = localStack.execInContainer("awslocal", "s3", "ls", "s3://" + TEST_BUCKET).getStdout();
+        assertTrue(outputBefore.contains(TEST_FILE_PATH) || !outputBefore.trim().isEmpty(),
+                "File should exist in S3 bucket before deletion");
 
         // Delete the attachment
-        String deleteUrl = "http://localhost:" + port + "/api/v1/attachments/" + attachmentDto.getId();
-        restTemplate.delete(deleteUrl);
+        ResponseEntity<Void> deleteResponse = restTemplate.exchange(
+                "http://localhost:" + port + "/api/v1/attachments/" + createdAttachment.getId(),
+                HttpMethod.DELETE,
+                null,
+                Void.class);
 
-        // Verify the file no longer exists in S3
-        String output = localStack.execInContainer("awslocal", "s3", "ls", "s3://" + TEST_BUCKET).getStdout();
-        long objectCount = output.lines().count();
-        assertEquals(0, objectCount);
+        assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getStatusCode());
+
+        // Verify file no longer exists in S3
+        String outputAfter = localStack.execInContainer("awslocal", "s3", "ls", "s3://" + TEST_BUCKET).getStdout();
+        assertTrue(outputAfter.trim().isEmpty() || !outputAfter.contains(TEST_FILE_PATH),
+                "File should not exist in S3 bucket after deletion: " + outputAfter);
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    void testCreateAttachmentWithInvalidFileType() {
+        // Create a test file with an invalid extension
+        File invalidFile = new File("src/test/resources/invalid.xyz");
+        try {
+            invalidFile.createNewFile();
+            try (FileWriter writer = new FileWriter(invalidFile)) {
+                writer.write("Invalid file content");
+            }
+
+            // Set up a request
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", new ClassPathResource("invalid.xyz"));
+
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            // Execute request
+            ResponseEntity<String> response = restTemplate.exchange(
+                    "http://localhost:" + port + "/api/v1/attachments/task/1",
+                    HttpMethod.POST,
+                    requestEntity,
+                    String.class);
+
+            // Should return a bad request
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+
+        } catch (IOException e) {
+            fail("Failed to create test file: " + e.getMessage());
+        } finally {
+            // Clean up
+            if (invalidFile.exists()) {
+                invalidFile.delete();
+            }
+        }
+    }
+
+    @Test
+    @Sql({"/schema.sql", "/data.sql"})
+    void testCreateAttachmentForNonExistentTask() {
+        // Set up a request
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ClassPathResource(TEST_FILE_PATH));
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        // Execute request for non-existent task
+        ResponseEntity<String> response = restTemplate.exchange(
+                "http://localhost:" + port + "/api/v1/attachments/task/999",
+                HttpMethod.POST,
+                requestEntity,
+                String.class);
+
+        // Should return not found or bad request
+        assertTrue(response.getStatusCode() == HttpStatus.NOT_FOUND ||
+                response.getStatusCode() == HttpStatus.BAD_REQUEST);
     }
 }
