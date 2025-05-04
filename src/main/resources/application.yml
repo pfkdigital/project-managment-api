@@ -1,0 +1,41 @@
+# Application configuration
+spring:
+  application:
+    name: project-management-api
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: create
+    defer-datasource-initialization: true
+
+  # SQL initialization
+  sql:
+    init:
+      mode: always
+      platform: postgres
+
+  # Redis cache configuration
+  cache:
+    type: redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # File upload configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-request-size: 10MB
+      max-file-size: 10MB
+
+# Security configuration
+security:
+  jwt:
+    secret:
+      key: 54F558854B9508B515C984379018A6DDA377B7E08C098A2C129057992F633CB0
+    expiration:
+      time: 86400000
+    refresh:
+      expiration:
+        time: 259200000
