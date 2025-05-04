@@ -22,16 +22,15 @@ services:
     image: localstack/localstack
     container_name: localstack
     environment:
-      - DOCKER_HOST=unix:///var/run/docker.sock
+      - SERVICES=s3,ses
       - AWS_ACCESS_KEY_ID=localstack
       - AWS_SECRET_ACCESS_KEY=localstack
-      - SERVICES=s3
-      - DEBUG=1
+      - AWS_DEFAULT_REGION=us-east-1
     ports:
       - "4566:4566"
-      - "4510-4559:4510-4559"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
     networks:
       - backend
 networks:

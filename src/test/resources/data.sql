@@ -52,12 +52,16 @@ INSERT INTO comment (content, created_at, updated_at, task_id, issue_id, user_id
                                                                                                  ('Investigating why export fails on Safari.', '2025-02-19', NULL, NULL, 3, 4, false),
                                                                                                  ('Real-time sync improved after WebSocket refactor.', '2025-02-20', NULL, 4, NULL, 5, false);
 
--- Insert Attachments
+
 INSERT INTO attachment (file_name, file_path, file_type, uploaded_at, task_id, issue_id, author_id) VALUES
                                                                                                         ('design_mockup.png', '/uploads/design_mockup.png', 'image/png', '2025-02-14', 2, NULL, 3),
                                                                                                         ('error_log.txt', '/uploads/error_log.txt', 'text/plain', '2025-02-15', NULL, 1, 2),
                                                                                                         ('invoice_modal_wireframe.pdf', '/uploads/invoice_modal_wireframe.pdf', 'application/pdf', '2025-02-18', 3, NULL, 4),
-                                                                                                        ('sync_test_report.xlsx', '/uploads/sync_test_report.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '2025-02-20', 4, NULL, 5);
+                                                                                                        ('sync_test_report.jpg', '/uploads/sync_test_report.jpg', 'image/jpeg', '2025-02-20', 4, NULL, 5),
+                                                                                                        ('bug_screenshot.jpeg', '/uploads/bug_screenshot.jpeg', 'image/jpeg', '2025-02-21', NULL, 2, 2),
+                                                                                                        ('api_documentation.txt', '/uploads/api_documentation.txt', 'text/plain', '2025-02-22', 1, NULL, 2),
+                                                                                                        ('user_feedback.png', '/uploads/user_feedback.png', 'image/png', '2025-02-23', NULL, 3, 4),
+                                                                                                        ('performance_report.pdf', '/uploads/performance_report.pdf', 'application/pdf', '2025-02-24', 5, NULL, 3);
 
 -- Insert Notifications
 INSERT INTO notification (type, message, is_read, created_at) VALUES

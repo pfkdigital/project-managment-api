@@ -16,8 +16,8 @@ cloud:
       uri: http://localhost:4566
     region:
       static: us-east-1
-    stack:
-      auto: false
+    s3:
+      bucket: pfk-task-attachments
     ses:
       from:
         email: "noah@pfkdigital.co.uk"
