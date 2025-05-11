@@ -1,7 +1,5 @@
 package org.example.projectmanagementapi.service;
 
-import java.io.IOException;
-
 public interface EmailService {
     void sendVerificationEmail(String to, String token);
     void sendAccountVerified(String to);

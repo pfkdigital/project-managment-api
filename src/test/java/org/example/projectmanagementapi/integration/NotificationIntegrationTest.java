@@ -1,106 +1,79 @@
 package org.example.projectmanagementapi.integration;
 
 import org.example.projectmanagementapi.config.TestJpaConfig;
-import org.example.projectmanagementapi.dto.response.NotificationDto;
 import org.example.projectmanagementapi.enums.NotificationType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = {
-      "spring.main.allow-bean-definition-overriding=true",
-    })
+        properties = {"spring.main.allow-bean-definition-overriding=true"}
+)
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(TestJpaConfig.class)
 @DisplayName("Notification API Integration Tests")
 public class NotificationIntegrationTest {
 
-  @Autowired private TestRestTemplate restTemplate;
-
-  @LocalServerPort private int port;
+  @Autowired private MockMvc mockMvc;
 
   private String getBaseUrl() {
-    return "http://localhost:" + port + "/api/v1/notifications";
+    return "/api/v1/notifications";
   }
 
   @Nested
   @DisplayName("Notification GET Operations")
   class NotificationGetOperations {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Get all notifications")
-    public void testGetAllNotifications() {
-      ResponseEntity<List<NotificationDto>> response =
-          restTemplate.exchange(
-              getBaseUrl(),
-              HttpMethod.GET,
-              null,
-              new ParameterizedTypeReference<List<NotificationDto>>() {});
-      System.out.println(response);
-      assertEquals(HttpStatus.OK, response.getStatusCode());
-      assertNotNull(response.getBody());
-      assertEquals(5, response.getBody().size());
-
-      NotificationDto firstNotification = response.getBody().get(0);
-      assertEquals("Your task has been updated.", firstNotification.getMessage());
-      assertEquals(NotificationType.UPDATE, firstNotification.getType());
-      assertFalse(firstNotification.getIsRead());
+    public void testGetAllNotifications() throws Exception {
+      mockMvc.perform(get(getBaseUrl()))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$", hasSize(5)))
+              .andExpect(jsonPath("$[0].message").value("Your task has been updated."))
+              .andExpect(jsonPath("$[0].type").value("UPDATE"))
+              .andExpect(jsonPath("$[0].isRead").value(false));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Check notification content details")
-    public void testNotificationContent() {
-      ResponseEntity<List<NotificationDto>> response =
-          restTemplate.exchange(
-              getBaseUrl(),
-              HttpMethod.GET,
-              null,
-              new ParameterizedTypeReference<List<NotificationDto>>() {});
-
-      List<NotificationDto> notifications = response.getBody();
-      assertNotNull(notifications);
-
-      assertTrue(notifications.stream().anyMatch(n -> n.getType() == NotificationType.UPDATE));
-      assertTrue(notifications.stream().anyMatch(n -> n.getType() == NotificationType.ASSIGNMENT));
-      assertTrue(notifications.stream().anyMatch(n -> n.getType() == NotificationType.CREATION));
-      assertTrue(notifications.stream().anyMatch(n -> n.getType() == NotificationType.COMPLETION));
-
-      long readCount = notifications.stream().filter(NotificationDto::getIsRead).count();
-      long unreadCount = notifications.stream().filter(n -> !n.getIsRead()).count();
-      assertEquals(2, readCount);
-      assertEquals(3, unreadCount);
+    public void testNotificationContent() throws Exception {
+      mockMvc.perform(get(getBaseUrl()))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$[?(@.type == 'UPDATE')]").exists())
+              .andExpect(jsonPath("$[?(@.type == 'ASSIGNMENT')]").exists())
+              .andExpect(jsonPath("$[?(@.type == 'CREATION')]").exists())
+              .andExpect(jsonPath("$[?(@.type == 'COMPLETION')]").exists())
+              // Check for read notifications
+              .andExpect(jsonPath("$[?(@.isRead == true)]", hasSize(2)))
+              // Check for unread notifications
+              .andExpect(jsonPath("$[?(@.isRead == false)]", hasSize(3)));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql"})
     @DisplayName("Get notifications with empty database")
-    public void testGetNotificationsEmptyDb() {
-      ResponseEntity<List<NotificationDto>> response =
-          restTemplate.exchange(
-              getBaseUrl(),
-              HttpMethod.GET,
-              null,
-              new ParameterizedTypeReference<List<NotificationDto>>() {});
-
-      assertEquals(HttpStatus.OK, response.getStatusCode());
-      assertNotNull(response.getBody());
-      assertTrue(response.getBody().isEmpty());
+    public void testGetNotificationsEmptyDb() throws Exception {
+      mockMvc.perform(get(getBaseUrl()))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$", hasSize(0)));
     }
   }
 
@@ -108,12 +81,21 @@ public class NotificationIntegrationTest {
   @DisplayName("Notification Edge Cases")
   class NotificationEdgeCases {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Test invalid URL path")
-    public void testInvalidUrlPath() {
-      ResponseEntity<String> response =
-          restTemplate.getForEntity(getBaseUrl() + "/nonexistent", String.class);
-      assertTrue(response.getStatusCode().is4xxClientError());
+    public void testInvalidUrlPath() throws Exception {
+      mockMvc.perform(get(getBaseUrl() + "/nonexistent"))
+              .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Mark non-existent notification as read")
+    public void testMarkNonExistentNotificationAsRead() throws Exception {
+      mockMvc.perform(get(getBaseUrl() + "/999/mark-read"))
+              .andExpect(status().is4xxClientError());
     }
   }
 }

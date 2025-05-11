@@ -90,6 +90,7 @@ public class AttachmentServiceImpl implements AttachmentService {
   }
 
   private Attachment createAndSaveAttachment(MultipartFile file, String path) {
+    System.out.println(file.getSize());
     // User currentUser = (User)
     // SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     User user =

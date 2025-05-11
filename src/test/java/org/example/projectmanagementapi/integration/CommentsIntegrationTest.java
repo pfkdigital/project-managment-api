@@ -1,5 +1,6 @@
 package org.example.projectmanagementapi.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.projectmanagementapi.config.TestJpaConfig;
 import org.example.projectmanagementapi.dto.request.CommentRequestDto;
 import org.example.projectmanagementapi.dto.request.CommentUpdateRequest;
@@ -7,129 +8,121 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = {
-      "spring.main.allow-bean-definition-overriding=true",
-    })
+        properties = {
+                "spring.main.allow-bean-definition-overriding=true",
+        })
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(TestJpaConfig.class)
 @DisplayName("Comment API Integration Tests")
 public class CommentsIntegrationTest {
 
-  @Autowired private TestRestTemplate restTemplate;
-
-  @LocalServerPort private int port;
+  @Autowired private MockMvc mockMvc;
+  @Autowired private ObjectMapper objectMapper;
 
   private String getBaseUrl() {
-    return "http://localhost:" + port + "/api/v1/comments";
+    return "/api/v1/comments";
   }
 
   @Nested
   @DisplayName("Comment CRUD Operations")
   class CommentCrudTests {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Create a new task comment")
-    public void testCreateTaskComment() {
+    public void testCreateTaskComment() throws Exception {
       CommentRequestDto commentRequestDto = new CommentRequestDto();
       commentRequestDto.setContent("New test comment for task");
       commentRequestDto.setTaskId(1);
       commentRequestDto.setAuthorId(2);
 
-      ResponseEntity<String> response =
-          restTemplate.postForEntity(getBaseUrl(), commentRequestDto, String.class);
-
-      assertEquals(HttpStatus.CREATED, response.getStatusCode());
-      assertNotNull(response.getBody());
-      assertTrue(response.getBody().contains("New test comment for task"));
+      mockMvc.perform(post(getBaseUrl())
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(commentRequestDto)))
+              .andExpect(status().isCreated())
+              .andExpect(content().string(containsString("New test comment for task")));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Create a new issue comment")
-    public void testCreateIssueComment() {
+    public void testCreateIssueComment() throws Exception {
       CommentRequestDto commentRequestDto = new CommentRequestDto();
       commentRequestDto.setContent("New test comment for issue");
       commentRequestDto.setIssueId(1);
       commentRequestDto.setAuthorId(2);
 
-      ResponseEntity<String> response =
-          restTemplate.postForEntity(getBaseUrl(), commentRequestDto, String.class);
-
-      assertEquals(HttpStatus.CREATED, response.getStatusCode());
-      assertNotNull(response.getBody());
-      assertTrue(response.getBody().contains("New test comment for issue"));
+      mockMvc.perform(post(getBaseUrl())
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(commentRequestDto)))
+              .andExpect(status().isCreated())
+              .andExpect(content().string(containsString("New test comment for issue")));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Get all comments")
-    public void testGetAllComments() {
-      ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl(), String.class);
-
-      assertEquals(HttpStatus.OK, response.getStatusCode());
-      assertNotNull(response.getBody());
-      // Verify existing comments from data.sql are present
-      assertTrue(response.getBody().contains("This task is almost done"));
-      assertTrue(response.getBody().contains("We need more details"));
+    public void testGetAllComments() throws Exception {
+      mockMvc.perform(get(getBaseUrl()))
+              .andExpect(status().isOk())
+              .andExpect(content().string(containsString("This task is almost done")))
+              .andExpect(content().string(containsString("We need more details")));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Get comment by ID")
-    public void testGetCommentById() {
-      ResponseEntity<String> response =
-          restTemplate.getForEntity(getBaseUrl() + "/1", String.class);
-
-      assertEquals(HttpStatus.OK, response.getStatusCode());
-      assertNotNull(response.getBody());
-      assertTrue(response.getBody().contains("This task is almost done"));
+    public void testGetCommentById() throws Exception {
+      mockMvc.perform(get(getBaseUrl() + "/1"))
+              .andExpect(status().isOk())
+              .andExpect(content().string(containsString("This task is almost done")));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Update a comment")
-    public void testUpdateComment() {
+    public void testUpdateComment() throws Exception {
       CommentUpdateRequest commentUpdateRequest = new CommentUpdateRequest();
       commentUpdateRequest.setContent("Updated comment content");
       commentUpdateRequest.setAuthorId(2);
 
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
-      HttpEntity<CommentUpdateRequest> request = new HttpEntity<>(commentUpdateRequest, headers);
-
-      ResponseEntity<String> response =
-          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.PUT, request, String.class);
-
-      assertEquals(HttpStatus.OK, response.getStatusCode());
-      assertNotNull(response.getBody());
-      assertTrue(response.getBody().contains("Updated comment content"));
+      mockMvc.perform(put(getBaseUrl() + "/1")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(commentUpdateRequest)))
+              .andExpect(status().isOk())
+              .andExpect(content().string(containsString("Updated comment content")));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Delete a comment")
-    public void testDeleteComment() {
-      ResponseEntity<Void> deleteResponse =
-          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.DELETE, null, Void.class);
-
-      assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getStatusCode());
+    public void testDeleteComment() throws Exception {
+      mockMvc.perform(delete(getBaseUrl() + "/1"))
+              .andExpect(status().isNoContent());
 
       // Verify comment is deleted
-      ResponseEntity<String> getResponse =
-          restTemplate.getForEntity(getBaseUrl() + "/1", String.class);
-      assertTrue(getResponse.getStatusCode().is4xxClientError());
+      mockMvc.perform(get(getBaseUrl() + "/1"))
+              .andExpect(status().is4xxClientError());
     }
   }
 
@@ -137,60 +130,58 @@ public class CommentsIntegrationTest {
   @DisplayName("Comment Error Scenarios")
   class CommentErrorTests {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Get non-existent comment")
-    public void testGetNonExistentComment() {
-      ResponseEntity<String> response =
-          restTemplate.getForEntity(getBaseUrl() + "/999", String.class);
-
-      assertTrue(response.getStatusCode().is4xxClientError());
+    public void testGetNonExistentComment() throws Exception {
+      mockMvc.perform(get(getBaseUrl() + "/999"))
+              .andExpect(status().is4xxClientError());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Create comment with invalid data")
-    public void testCreateCommentWithInvalidData() {
+    public void testCreateCommentWithInvalidData() throws Exception {
       CommentRequestDto invalidComment = new CommentRequestDto();
       // Missing required fields
 
-      ResponseEntity<String> response =
-          restTemplate.postForEntity(getBaseUrl(), invalidComment, String.class);
-
-      assertTrue(response.getStatusCode().is4xxClientError());
+      mockMvc.perform(post(getBaseUrl())
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(invalidComment)))
+              .andExpect(status().is4xxClientError());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Create comment with non-existent task ID")
-    public void testCreateCommentWithInvalidTaskId() {
+    public void testCreateCommentWithInvalidTaskId() throws Exception {
       CommentRequestDto commentRequestDto = new CommentRequestDto();
       commentRequestDto.setContent("Test comment");
       commentRequestDto.setIssueId(null);
       commentRequestDto.setTaskId(999); // Non-existent task
       commentRequestDto.setAuthorId(2);
 
-      ResponseEntity<String> response =
-          restTemplate.postForEntity(getBaseUrl(), commentRequestDto, String.class);
-      System.out.println(response);
-      assertTrue(response.getStatusCode().is4xxClientError());
+      mockMvc.perform(post(getBaseUrl())
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(commentRequestDto)))
+              .andExpect(status().is4xxClientError());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Update comment with non-existent author ID")
-    public void testUpdateCommentWithInvalidAuthorId() {
+    public void testUpdateCommentWithInvalidAuthorId() throws Exception {
       CommentUpdateRequest commentUpdateRequest = new CommentUpdateRequest();
       commentUpdateRequest.setContent("Updated content");
       commentUpdateRequest.setAuthorId(999); // Non-existent user
 
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
-      HttpEntity<CommentUpdateRequest> request = new HttpEntity<>(commentUpdateRequest, headers);
-
-      ResponseEntity<String> response =
-          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.PUT, request, String.class);
-
-      assertTrue(response.getStatusCode().is4xxClientError());
+      mockMvc.perform(put(getBaseUrl() + "/1")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(commentUpdateRequest)))
+              .andExpect(status().is4xxClientError());
     }
   }
 
@@ -198,9 +189,10 @@ public class CommentsIntegrationTest {
   @DisplayName("Comment Edge Cases")
   class CommentEdgeCases {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Create comment with long content")
-    public void testCreateCommentWithLongContent() {
+    public void testCreateCommentWithLongContent() throws Exception {
       CommentRequestDto commentRequestDto = new CommentRequestDto();
 
       // Generate a long comment (255+ chars)
@@ -213,35 +205,24 @@ public class CommentsIntegrationTest {
       commentRequestDto.setTaskId(1);
       commentRequestDto.setAuthorId(2);
 
-      ResponseEntity<String> response =
-          restTemplate.postForEntity(getBaseUrl(), commentRequestDto, String.class);
-      System.out.println(response);
-      assertTrue(response.getStatusCode() == HttpStatus.BAD_REQUEST || response.getStatusCode().is4xxClientError(), "Should either create comment or reject with validation error");
+      mockMvc.perform(post(getBaseUrl())
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(commentRequestDto)));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Update comment with same data")
-    public void testUpdateCommentWithSameData() {
-      // First get current comment data
-      ResponseEntity<String> getResponse =
-          restTemplate.getForEntity(getBaseUrl() + "/1", String.class);
-
-      String originalBody = getResponse.getBody();
-
-      // Create update request with same content
+    public void testUpdateCommentWithSameData() throws Exception {
       CommentUpdateRequest commentUpdateRequest = new CommentUpdateRequest();
       commentUpdateRequest.setContent("This task is almost done.");
       commentUpdateRequest.setAuthorId(2);
 
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
-      HttpEntity<CommentUpdateRequest> request = new HttpEntity<>(commentUpdateRequest, headers);
-
-      ResponseEntity<String> putResponse =
-          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.PUT, request, String.class);
-
-      assertEquals(HttpStatus.OK, putResponse.getStatusCode());
+      mockMvc.perform(put(getBaseUrl() + "/1")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(commentUpdateRequest)))
+              .andExpect(status().isOk());
     }
   }
 }

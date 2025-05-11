@@ -1,6 +1,7 @@
 services:
   postgres:
     image: 'postgres:16'
+    container_name: postgres
     environment:
       - POSTGRES_DB=pfktasks
       - POSTGRES_PASSWORD=secret
@@ -11,6 +12,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pfkuser -d pfktasks"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:latest
     container_name: redis_server
@@ -18,21 +25,37 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:latest
     container_name: localstack
     environment:
       - SERVICES=s3,ses
+      - DEBUG=1
+      - AWS_DEFAULT_REGION=eu-west-2
+      - EDGE_PORT=4566
+      - DATA_DIR=/tmp/localstack/data
+      - DOCKER_HOST=unix:///var/run/docker.sock
       - AWS_ACCESS_KEY_ID=localstack
       - AWS_SECRET_ACCESS_KEY=localstack
-      - AWS_DEFAULT_REGION=us-east-1
+      - HOSTNAME_EXTERNAL=localstack
+      - HOSTNAME=localstack
     ports:
       - "4566:4566"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./localstack:/etc/localstack/init/ready.d
       - ./init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
     networks:
       - backend
+
 networks:
   backend:
 volumes:

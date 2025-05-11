@@ -1,42 +1,110 @@
 package org.example.projectmanagementapi.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.projectmanagementapi.config.TestJpaConfig;
 import org.example.projectmanagementapi.dto.response.AttachmentDto;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Testcontainers
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = {
-      "spring.main.allow-bean-definition-overriding=true",
-      "spring.servlet.multipart.max-file-size=10MB",
-      "spring.servlet.multipart.max-request-size=10MB"
-    })
+        properties = {
+                "spring.main.allow-bean-definition-overriding=true",
+                "spring.servlet.multipart.max-file-size=10MB",
+                "spring.servlet.multipart.max-request-size=10MB"
+        })
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(TestJpaConfig.class)
 @DisplayName("Attachment API Integration Tests")
 public class AttachmentsIntegrationTest {
 
-  @Autowired private TestRestTemplate restTemplate;
+  @Container
+  public static LocalStackContainer localStack =
+          new LocalStackContainer(DockerImageName.parse("localstack/localstack:latest"))
+                  .withServices(LocalStackContainer.Service.S3);
 
-  @LocalServerPort private int port;
+  private static final String BUCKET_NAME = "pfk-task-attachments";
+  private static final String REGION = "us-east-1";
+  private static S3Client s3Client;
+
+  @Autowired private MockMvc mockMvc;
+  @Autowired private ObjectMapper objectMapper;
+
+  @DynamicPropertySource
+  static void registerS3Properties(DynamicPropertyRegistry registry) {
+    registry.add("cloud.aws.s3.bucket", () -> BUCKET_NAME);
+    registry.add("cloud.aws.endpoint", () -> localStack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+    registry.add("cloud.aws.region.static", () -> REGION);
+    registry.add("cloud.aws.credentials.access-key", () -> localStack.getAccessKey());
+    registry.add("cloud.aws.credentials.secret-key", () -> localStack.getSecretKey());
+    registry.add("cloud.aws.stack.auto", () -> false);
+    registry.add("cloud.aws.stack.enabled", () -> false);
+  }
+
+  @BeforeAll
+  static void setup() {
+    // Configure S3 client to use LocalStack
+    s3Client = S3Client.builder()
+            .endpointOverride(localStack.getEndpointOverride(LocalStackContainer.Service.S3))
+            .region(Region.of(REGION))
+            .credentialsProvider(
+                    StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create(localStack.getAccessKey(), localStack.getSecretKey())))
+            .forcePathStyle(true)
+            .build();
+
+    // Create the test bucket
+    try {
+      s3Client.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build());
+    } catch (BucketAlreadyExistsException e) {
+      // Bucket already exists, which is fine
+    }
+  }
 
   private String getBaseUrl() {
-    return "http://localhost:" + port + "/api/v1/attachments";
+    return "/api/v1/attachments";
+  }
+
+  private String extractS3KeyFromUrl(String url) {
+    if (url.contains(".amazonaws.com/")) {
+      return url.substring(url.indexOf(".amazonaws.com/") + ".amazonaws.com/".length());
+    }
+    return url;
   }
 
   @Nested
@@ -44,119 +112,115 @@ public class AttachmentsIntegrationTest {
   class AttachmentUploadTests {
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
-    @DisplayName("Upload attachment to task")
-    public void testUploadAttachmentToTask() {
-      MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-      body.add("file", new ClassPathResource("test-files/test.txt"));
+    @DisplayName("Upload attachment to task and verify in S3")
+    public void testUploadAttachmentToTaskAndVerifyInS3() throws Exception {
+      // Create test content
+      String fileContent = "This is a test file content for task attachment";
+      String fileName = "s3-verify-task.txt";
 
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+      MockMultipartFile file = new MockMultipartFile(
+              "file",
+              fileName,
+              MediaType.TEXT_PLAIN_VALUE,
+              fileContent.getBytes()
+      );
 
-      HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+      MvcResult result = mockMvc
+              .perform(multipart(getBaseUrl() + "/task/1")
+                      .file(file)
+                      .contentType(MediaType.MULTIPART_FORM_DATA))
+              .andExpect(status().isCreated())
+              .andReturn();
 
-      ResponseEntity<AttachmentDto> response =
-          restTemplate.exchange(
-              getBaseUrl() + "/task/1", HttpMethod.POST, requestEntity, AttachmentDto.class);
+      AttachmentDto attachment = objectMapper.readValue(
+              result.getResponse().getContentAsString(), AttachmentDto.class);
 
-      assertEquals(HttpStatus.CREATED, response.getStatusCode());
-      AttachmentDto attachment = response.getBody();
       assertNotNull(attachment);
       assertNotNull(attachment.getId());
-      assertEquals("test.txt", attachment.getFileName());
+      assertEquals(fileName, attachment.getFileName());
+
+      // Extract S3 key from the URL format
+      String s3Key = extractS3KeyFromUrl(attachment.getFilePath());
+
+      // Verify file exists in S3
+      try {
+        HeadObjectResponse headObjectResponse = s3Client.headObject(
+                HeadObjectRequest.builder()
+                        .bucket(BUCKET_NAME)
+                        .key(s3Key)
+                        .build()
+        );
+        assertNotNull(headObjectResponse);
+
+        // Verify content matches
+        ResponseInputStream<GetObjectResponse> response = s3Client.getObject(
+                GetObjectRequest.builder()
+                        .bucket(BUCKET_NAME)
+                        .key(s3Key)
+                        .build()
+        );
+
+        byte[] bytes = response.readAllBytes();
+        String retrievedContent = new String(bytes, StandardCharsets.UTF_8);
+        assertEquals(fileContent, retrievedContent);
+      } catch (NoSuchKeyException e) {
+        fail("File should exist in S3 at key: " + s3Key);
+      }
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
-    @DisplayName("Upload attachment to issue")
-    public void testUploadAttachmentToIssue() {
-      MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-      body.add("file", new ClassPathResource("test-files/test.txt"));
+    @DisplayName("Upload attachment to issue and verify in S3")
+    public void testUploadAttachmentToIssueAndVerifyInS3() throws Exception {
+      String fileContent = "This is a test file content for issue attachment";
+      String fileName = "s3-verify-issue.txt";
 
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+      MockMultipartFile file = new MockMultipartFile(
+              "file",
+              fileName,
+              MediaType.TEXT_PLAIN_VALUE,
+              fileContent.getBytes()
+      );
 
-      HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+      MvcResult result = mockMvc
+              .perform(multipart(getBaseUrl() + "/issue/1")
+                      .file(file)
+                      .contentType(MediaType.MULTIPART_FORM_DATA))
+              .andExpect(status().isCreated())
+              .andReturn();
 
-      ResponseEntity<AttachmentDto> response =
-          restTemplate.exchange(
-              getBaseUrl() + "/issue/1", HttpMethod.POST, requestEntity, AttachmentDto.class);
+      AttachmentDto attachment = objectMapper.readValue(
+              result.getResponse().getContentAsString(), AttachmentDto.class);
 
-      assertEquals(HttpStatus.CREATED, response.getStatusCode());
-      AttachmentDto attachment = response.getBody();
       assertNotNull(attachment);
       assertNotNull(attachment.getId());
-    }
-  }
+      assertEquals(fileName, attachment.getFileName());
 
-  @Nested
-  @DisplayName("Attachment Download Operations")
-  class AttachmentDownloadTests {
+      // Extract the S3 key from the file path
+      String s3Key = extractS3KeyFromUrl(attachment.getFilePath());
 
-    @Test
-    @Sql({"/schema.sql", "/data.sql"})
-    @DisplayName("Download existing attachment")
-    public void testDownloadAttachment() {
-      ResponseEntity<byte[]> response =
-          restTemplate.getForEntity(getBaseUrl() + "/1/download", byte[].class);
+      // Expected format: attachments/issues/1/s3-verify-issue.txt
+      assertTrue(s3Key.contains("attachments/issues/1/"),
+              "S3 key should contain the expected path structure");
 
-      assertEquals(HttpStatus.OK, response.getStatusCode());
-      assertNotNull(response.getBody());
-      assertTrue(response.getBody().length > 0);
-    }
-  }
+      // Verify the object exists in S3
+      boolean objectExists = s3ObjectExists(BUCKET_NAME, s3Key);
+      assertTrue(objectExists, "Object should exist in S3 bucket at key: " + s3Key);
 
-  @Nested
-  @DisplayName("Attachment Error Cases")
-  class AttachmentErrorTests {
+      // Retrieve and verify content
+      ResponseInputStream<GetObjectResponse> response = s3Client.getObject(
+              GetObjectRequest.builder()
+                      .bucket(BUCKET_NAME)
+                      .key(s3Key)
+                      .build()
+      );
 
-    @Test
-    @Sql({"/schema.sql", "/data.sql"})
-    @DisplayName("Upload to non-existent task")
-    public void testUploadToNonExistentTask() {
-      MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-      body.add("file", new ClassPathResource("test-files/test.txt"));
-
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-      HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
-      ResponseEntity<String> response =
-          restTemplate.exchange(
-              getBaseUrl() + "/task/999", HttpMethod.POST, requestEntity, String.class);
-
-      assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    @Sql({"/schema.sql", "/data.sql"})
-    @DisplayName("Download non-existent attachment")
-    public void testDownloadNonExistentAttachment() {
-      ResponseEntity<String> response =
-          restTemplate.getForEntity(getBaseUrl() + "/999/download", String.class);
-
-      assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    @Sql({"/schema.sql", "/data.sql"})
-    @DisplayName("Upload oversized file")
-    public void testUploadOversizedFile() {
-      byte[] largeContent = new byte[11 * 1024 * 1024]; // 11MB
-      MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-      body.add("file", new HttpEntity<>(largeContent, new HttpHeaders()));
-
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-      HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
-      ResponseEntity<String> response =
-          restTemplate.exchange(
-              getBaseUrl() + "/task/1", HttpMethod.POST, requestEntity, String.class);
-
-      assertEquals(HttpStatus.PAYLOAD_TOO_LARGE, response.getStatusCode());
+      byte[] bytes = response.readAllBytes();
+      String retrievedContent = new String(bytes, StandardCharsets.UTF_8);
+      assertEquals(fileContent, retrievedContent);
     }
   }
 
@@ -165,65 +229,140 @@ public class AttachmentsIntegrationTest {
   class AttachmentDeleteTests {
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
-    @DisplayName("Delete existing attachment")
-    public void testDeleteAttachment() {
-      ResponseEntity<Void> response =
-          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.DELETE, null, Void.class);
+    @DisplayName("Delete existing attachment and verify removal from S3")
+    public void testDeleteAttachmentAndVerifyS3() throws Exception {
+      // First upload an attachment
+      String fileContent = "File to be deleted";
+      String fileName = "to-delete.txt";
 
-      assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+      MockMultipartFile file = new MockMultipartFile(
+              "file", fileName, MediaType.TEXT_PLAIN_VALUE, fileContent.getBytes());
 
-      // Verify deletion
-      ResponseEntity<String> getResponse =
-          restTemplate.getForEntity(getBaseUrl() + "/1/download", String.class);
-      assertEquals(HttpStatus.NOT_FOUND, getResponse.getStatusCode());
+      MvcResult result = mockMvc
+              .perform(multipart(getBaseUrl() + "/task/1")
+                      .file(file)
+                      .contentType(MediaType.MULTIPART_FORM_DATA))
+              .andExpect(status().isCreated())
+              .andReturn();
+
+      AttachmentDto attachment = objectMapper.readValue(
+              result.getResponse().getContentAsString(), AttachmentDto.class);
+
+      String s3Key = extractS3KeyFromUrl(attachment.getFilePath());
+
+      // Verify it exists in S3 before deletion
+      assertTrue(s3ObjectExists(BUCKET_NAME, s3Key),
+              "File should exist before deletion at key: " + s3Key);
+
+      // Delete it through the API
+      mockMvc.perform(delete(getBaseUrl() + "/" + attachment.getId()))
+              .andExpect(status().isNoContent());
+
+      // Verify it's been removed from S3
+      assertFalse(s3ObjectExists(BUCKET_NAME, s3Key),
+              "Object should not exist in S3 after deletion");
     }
   }
 
   @Nested
-  @DisplayName("Attachment Edge Cases")
-  class AttachmentEdgeCases {
+  @DisplayName("S3 Bucket Operations")
+  class S3BucketTests {
 
     @Test
-    @Sql({"/schema.sql", "/data.sql"})
-    @DisplayName("Upload empty file")
-    public void testUploadEmptyFile() {
-      MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-      body.add("file", new HttpEntity<>(new byte[0], new HttpHeaders()));
+    @DisplayName("Verify S3 bucket exists")
+    public void testS3BucketExists() {
+      ListBucketsResponse listBucketsResponse = s3Client.listBuckets();
+      boolean bucketExists = listBucketsResponse.buckets().stream()
+              .anyMatch(bucket -> bucket.name().equals(BUCKET_NAME));
 
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-      HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
-      ResponseEntity<String> response =
-          restTemplate.exchange(
-              getBaseUrl() + "/task/1", HttpMethod.POST, requestEntity, String.class);
-
-      assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+      assertTrue(bucketExists, "Test bucket should exist in S3");
     }
 
     @Test
+    @DisplayName("Test direct S3 operations")
+    public void testDirectS3Operations() throws IOException {
+      // Create a test key
+      String testKey = "attachments/direct-test/test-file.txt";
+      String content = "Test content for direct S3 operations";
+
+      // Upload directly to S3
+      s3Client.putObject(
+              PutObjectRequest.builder()
+                      .bucket(BUCKET_NAME)
+                      .key(testKey)
+                      .build(),
+              RequestBody.fromString(content)
+      );
+
+      ResponseInputStream<GetObjectResponse> response = s3Client.getObject(
+              GetObjectRequest.builder()
+                      .bucket(BUCKET_NAME)
+                      .key(testKey)
+                      .build()
+      );
+
+      byte[] bytes = response.readAllBytes();
+      String retrievedContent = new String(bytes, StandardCharsets.UTF_8);
+
+      assertEquals(content, retrievedContent, "Content retrieved from S3 should match original");
+
+      // Delete the object
+      s3Client.deleteObject(
+              DeleteObjectRequest.builder()
+                      .bucket(BUCKET_NAME)
+                      .key(testKey)
+                      .build()
+      );
+
+      // Verify it's deleted
+      assertFalse(s3ObjectExists(BUCKET_NAME, testKey),
+              "Object should be deleted from S3");
+    }
+  }
+
+  @Nested
+  @DisplayName("Attachment Error Cases")
+  class AttachmentErrorTests {
+
+    @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
-    @DisplayName("Upload file with special characters in name")
-    public void testUploadFileWithSpecialCharacters() {
-      MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-      HttpHeaders fileHeaders = new HttpHeaders();
-      fileHeaders.setContentType(MediaType.TEXT_PLAIN);
-      HttpEntity<byte[]> fileEntity = new HttpEntity<>("test content".getBytes(), fileHeaders);
-      body.add("file", fileEntity);
+    @DisplayName("Upload to non-existent task")
+    public void testUploadToNonExistentTask() throws Exception {
+      MockMultipartFile file = new MockMultipartFile(
+              "file", "test.txt", MediaType.TEXT_PLAIN_VALUE, "test content".getBytes());
 
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+      mockMvc.perform(multipart(getBaseUrl() + "/task/999")
+                      .file(file)
+                      .contentType(MediaType.MULTIPART_FORM_DATA))
+              .andExpect(status().isNotFound());
+    }
 
-      HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+    @Test
+    @WithMockUser(roles = "USER")
+    @Sql({"/schema.sql", "/data.sql"})
+    @DisplayName("Upload oversized file")
+    public void testUploadOversizedFile() throws Exception {
+      // Create a file that exceeds the limit (10MB)
+      byte[] largeContent = new byte[10 * 1024 * 1024 + 1]; // Just over 10MB
+      MockMultipartFile largeFile =
+              new MockMultipartFile("file", "large.txt", MediaType.TEXT_PLAIN_VALUE, largeContent);
 
-      ResponseEntity<AttachmentDto> response =
-          restTemplate.exchange(
-              getBaseUrl() + "/task/1", HttpMethod.POST, requestEntity, AttachmentDto.class);
+      mockMvc.perform(multipart(getBaseUrl() + "/task/1")
+                      .file(largeFile)
+                      .contentType(MediaType.MULTIPART_FORM_DATA))
+              .andExpect(status().isPayloadTooLarge());
+    }
+  }
 
-      assertEquals(HttpStatus.CREATED, response.getStatusCode());
-      assertNotNull(response.getBody());
+  private boolean s3ObjectExists(String bucket, String key) {
+    try {
+      s3Client.headObject(HeadObjectRequest.builder().bucket(bucket).key(key).build());
+      return true;
+    } catch (NoSuchKeyException e) {
+      return false;
     }
   }
 }

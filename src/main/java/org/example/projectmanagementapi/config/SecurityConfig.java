@@ -40,7 +40,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             request ->
                 request
-                    .requestMatchers("/api/v1/**")
+                    .requestMatchers("/api/v1/auth/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated()) // Security disabled for all endpoints

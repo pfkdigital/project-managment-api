@@ -7,39 +7,45 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = {"spring.main.allow-bean-definition-overriding=true"})
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {"spring.main.allow-bean-definition-overriding=true"})
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(TestJpaConfig.class)
 @DisplayName("Project API Integration Tests")
 public class ProjectsIntegrationTest {
 
-  @Autowired private TestRestTemplate restTemplate;
-
-  @LocalServerPort private int port;
+  @Autowired private MockMvc mockMvc;
+  @Autowired private ObjectMapper objectMapper;
 
   private String getBaseUrl() {
-    return "http://localhost:" + port + "/api/v1/projects";
+    return "/api/v1/projects";
   }
 
   @Nested
   @DisplayName("Project CRUD Operations")
   class ProjectCrudTests {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Create a new project")
-    public void testCreateProject() {
+    public void testCreateProject() throws Exception {
       ProjectRequestDto projectRequestDto = new ProjectRequestDto();
       projectRequestDto.setName("Test Project");
       projectRequestDto.setDescription("Test Description");
@@ -47,41 +53,41 @@ public class ProjectsIntegrationTest {
       projectRequestDto.setDisplayImageUrl("http://example.com/image.png");
       projectRequestDto.setOwnerId(1);
 
-      ResponseEntity<String> response =
-          restTemplate.postForEntity(getBaseUrl(), projectRequestDto, String.class);
-
-      assertEquals(HttpStatus.CREATED, response.getStatusCode());
+      mockMvc
+          .perform(
+              post(getBaseUrl())
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(objectMapper.writeValueAsString(projectRequestDto)))
+          .andExpect(status().isCreated());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Get all projects")
-    public void testGetAllProjects() {
-      ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl(), String.class);
-
-      assertEquals(HttpStatus.OK, response.getStatusCode());
-      String body = response.getBody();
-      assertNotNull(body);
-      assertTrue(body.contains("Project Alpha"));
+    public void testGetAllProjects() throws Exception {
+      mockMvc
+          .perform(get(getBaseUrl()))
+          .andExpect(status().isOk())
+          .andExpect(content().string(containsString("Project Alpha")));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Get project by ID")
-    public void testGetProjectById() {
-      ResponseEntity<String> response =
-          restTemplate.getForEntity(getBaseUrl() + "/1", String.class);
-
-      assertEquals(HttpStatus.OK, response.getStatusCode());
-      String body = response.getBody();
-      assertNotNull(body);
-      assertTrue(body.contains("Project Alpha"));
+    public void testGetProjectById() throws Exception {
+      mockMvc
+          .perform(get(getBaseUrl() + "/1"))
+          .andExpect(status().isOk())
+          .andExpect(content().string(containsString("Project Alpha")));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Update a project")
-    public void testUpdateProject() {
+    public void testUpdateProject() throws Exception {
       ProjectRequestDto projectRequestDto = new ProjectRequestDto();
       projectRequestDto.setName("Updated Project Alpha");
       projectRequestDto.setDescription("Updated first test project");
@@ -89,29 +95,22 @@ public class ProjectsIntegrationTest {
       projectRequestDto.setDisplayImageUrl("http://example.com/updated_image.png");
       projectRequestDto.setOwnerId(1);
 
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
-      HttpEntity<ProjectRequestDto> request = new HttpEntity<>(projectRequestDto, headers);
-
-      ResponseEntity<String> response =
-          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.PUT, request, String.class);
-
-      assertEquals(HttpStatus.OK, response.getStatusCode());
+      mockMvc
+          .perform(
+              put(getBaseUrl() + "/1")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(objectMapper.writeValueAsString(projectRequestDto)))
+          .andExpect(status().isOk());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Delete a project")
-    public void testDeleteProject() {
-      ResponseEntity<String> response =
-          restTemplate.exchange(getBaseUrl() + "/1", HttpMethod.DELETE, null, String.class);
+    public void testDeleteProject() throws Exception {
+      mockMvc.perform(delete(getBaseUrl() + "/1")).andExpect(status().isOk());
 
-      assertEquals(HttpStatus.OK, response.getStatusCode());
-
-      ResponseEntity<String> getResponse =
-          restTemplate.getForEntity(getBaseUrl() + "/1", String.class);
-      System.out.println(getResponse);
-      assertTrue(getResponse.getStatusCode().is4xxClientError());
+      mockMvc.perform(get(getBaseUrl() + "/1")).andExpect(status().is4xxClientError());
     }
   }
 
@@ -119,25 +118,19 @@ public class ProjectsIntegrationTest {
   @DisplayName("Project Collaborator Operations")
   class ProjectCollaboratorTests {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Add collaborator to a project")
-    public void testAddCollaborator() {
-      ResponseEntity<String> response =
-          restTemplate.exchange(
-              getBaseUrl() + "/1/collaborators/4", HttpMethod.PATCH, null, String.class);
-
-      assertEquals(HttpStatus.OK, response.getStatusCode());
+    public void testAddCollaborator() throws Exception {
+      mockMvc.perform(patch(getBaseUrl() + "/1/collaborators/4")).andExpect(status().isOk());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Remove collaborator from a project")
-    public void testRemoveCollaborator() {
-      ResponseEntity<String> response =
-          restTemplate.exchange(
-              getBaseUrl() + "/1/collaborators/2", HttpMethod.DELETE, null, String.class);
-
-      assertEquals(HttpStatus.OK, response.getStatusCode());
+    public void testRemoveCollaborator() throws Exception {
+      mockMvc.perform(delete(getBaseUrl() + "/1/collaborators/2")).andExpect(status().isOk());
     }
   }
 
@@ -145,37 +138,37 @@ public class ProjectsIntegrationTest {
   @DisplayName("Project Error Cases")
   class ProjectErrorTests {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Get non-existent project")
-    public void testGetNonExistentProject() {
-      ResponseEntity<String> response =
-          restTemplate.getForEntity(getBaseUrl() + "/999", String.class);
-
-      assertTrue(response.getStatusCode().is4xxClientError());
+    public void testGetNonExistentProject() throws Exception {
+      mockMvc.perform(get(getBaseUrl() + "/999")).andExpect(status().is4xxClientError());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Create project with missing required fields")
-    public void testCreateProjectWithMissingFields() {
+    public void testCreateProjectWithMissingFields() throws Exception {
       ProjectRequestDto projectRequestDto = new ProjectRequestDto();
       // Missing required fields
 
-      ResponseEntity<String> response =
-          restTemplate.postForEntity(getBaseUrl(), projectRequestDto, String.class);
-
-      assertTrue(response.getStatusCode().is4xxClientError());
+      mockMvc
+          .perform(
+              post(getBaseUrl())
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(objectMapper.writeValueAsString(projectRequestDto)))
+          .andExpect(status().is4xxClientError());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Add non-existent user as collaborator")
-    public void testAddNonExistentCollaborator() {
-      ResponseEntity<String> response =
-          restTemplate.exchange(
-              getBaseUrl() + "/1/collaborators/999", HttpMethod.PATCH, null, String.class);
-
-      assertTrue(response.getStatusCode().is4xxClientError());
+    public void testAddNonExistentCollaborator() throws Exception {
+      mockMvc
+          .perform(patch(getBaseUrl() + "/1/collaborators/999"))
+          .andExpect(status().is4xxClientError());
     }
   }
 }

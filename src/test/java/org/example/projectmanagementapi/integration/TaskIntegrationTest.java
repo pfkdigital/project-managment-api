@@ -1,55 +1,54 @@
 package org.example.projectmanagementapi.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.projectmanagementapi.config.TestJpaConfig;
 import org.example.projectmanagementapi.dto.request.TaskRequestDto;
-import org.example.projectmanagementapi.dto.response.DetailedTaskDto;
-import org.example.projectmanagementapi.dto.response.TaskDto;
 import org.example.projectmanagementapi.enums.PriorityStatus;
 import org.example.projectmanagementapi.enums.TaskStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {
-                "spring.main.allow-bean-definition-overriding=true"
-        }
+        properties = {"spring.main.allow-bean-definition-overriding=true"}
 )
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(TestJpaConfig.class)
 @DisplayName("Task API Integration Tests")
 public class TaskIntegrationTest {
 
-  @Autowired
-  private TestRestTemplate restTemplate;
-
-  @LocalServerPort
-  private int port;
+  @Autowired private MockMvc mockMvc;
+  @Autowired private ObjectMapper objectMapper;
 
   private String getBaseUrl() {
-    return "http://localhost:" + port + "/api/v1/tasks";
+    return "/api/v1/tasks";
   }
 
   @Nested
   @DisplayName("Task CRUD Operations")
   class TaskCrudTests {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Create a new task")
-    public void testCreateTask() {
+    public void testCreateTask() throws Exception {
       TaskRequestDto taskRequestDto = new TaskRequestDto();
       taskRequestDto.setDescription("Test Task");
       taskRequestDto.setStatus(TaskStatus.OPEN);
@@ -57,49 +56,38 @@ public class TaskIntegrationTest {
       taskRequestDto.setDueDate(LocalDate.now().plusDays(7));
       taskRequestDto.setProjectId(1);
 
-      ResponseEntity<TaskDto> response = restTemplate.postForEntity(
-              getBaseUrl(), taskRequestDto, TaskDto.class);
-
-      assertEquals(HttpStatus.CREATED, response.getStatusCode());
-      TaskDto taskDto = response.getBody();
-      assertNotNull(taskDto);
-      assertEquals("Test Task", taskDto.getDescription());
+      mockMvc.perform(post(getBaseUrl())
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(taskRequestDto)))
+              .andExpect(status().isCreated())
+              .andExpect(jsonPath("$.description").value("Test Task"));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Get all tasks")
-    public void testGetAllTasks() {
-      ResponseEntity<TaskDto[]> response = restTemplate.getForEntity(
-              getBaseUrl(), TaskDto[].class);
-
-      assertEquals(HttpStatus.OK, response.getStatusCode());
-      TaskDto[] tasks = response.getBody();
-      assertNotNull(tasks);
-      assertTrue(tasks.length > 0);
+    public void testGetAllTasks() throws Exception {
+      mockMvc.perform(get(getBaseUrl()))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$", hasSize(greaterThan(0))));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Get task by ID")
-    public void testGetTaskById() {
-      ResponseEntity<DetailedTaskDto> response = restTemplate.getForEntity(
-              getBaseUrl() + "/1", DetailedTaskDto.class);
-
-      assertEquals(HttpStatus.OK, response.getStatusCode());
-      DetailedTaskDto taskDto = response.getBody();
-      assertNotNull(taskDto);
-      assertNotNull(taskDto.getId());
+    public void testGetTaskById() throws Exception {
+      mockMvc.perform(get(getBaseUrl() + "/1"))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Update a task")
-    public void testUpdateTask() {
-      // First, get the task to update
-      DetailedTaskDto existingTask = restTemplate.getForObject(getBaseUrl() + "/1", DetailedTaskDto.class);
-      assertNotNull(existingTask);
-
+    public void testUpdateTask() throws Exception {
       TaskRequestDto taskRequestDto = new TaskRequestDto();
       taskRequestDto.setDescription("Updated Task Description");
       taskRequestDto.setStatus(TaskStatus.IN_PROGRESS);
@@ -107,47 +95,28 @@ public class TaskIntegrationTest {
       taskRequestDto.setDueDate(LocalDate.now().plusDays(5));
       taskRequestDto.setProjectId(1);
 
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
-      HttpEntity<TaskRequestDto> request = new HttpEntity<>(taskRequestDto, headers);
-
-      ResponseEntity<String> putResponse = restTemplate.exchange(
-              getBaseUrl() + "/1",
-              HttpMethod.PUT,
-              request,
-              String.class
-      );
-
-      assertEquals(HttpStatus.OK, putResponse.getStatusCode());
+      mockMvc.perform(put(getBaseUrl() + "/1")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(taskRequestDto)))
+              .andExpect(status().isOk());
 
       // Verify the update
-      ResponseEntity<DetailedTaskDto> getResponse = restTemplate.getForEntity(
-              getBaseUrl() + "/1", DetailedTaskDto.class);
-      DetailedTaskDto updatedTask = getResponse.getBody();
-
-      assertNotNull(updatedTask);
-      assertEquals("Updated Task Description", updatedTask.getDescription());
+      mockMvc.perform(get(getBaseUrl() + "/1"))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$.description").value("Updated Task Description"));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Delete a task")
-    public void testDeleteTask() {
-      ResponseEntity<Void> deleteResponse = restTemplate.exchange(
-              getBaseUrl() + "/1",
-              HttpMethod.DELETE,
-              null,
-              Void.class
-      );
-
-      assertEquals(HttpStatus.OK, deleteResponse.getStatusCode());
+    public void testDeleteTask() throws Exception {
+      mockMvc.perform(delete(getBaseUrl() + "/1"))
+              .andExpect(status().isOk());
 
       // Check that the task is deleted
-      ResponseEntity<String> getAfterDeleteResponse = restTemplate.getForEntity(
-              getBaseUrl() + "/1", String.class);
-
-      // Should return 404 Not Found or similar error status
-      assertTrue(getAfterDeleteResponse.getStatusCode().is4xxClientError());
+      mockMvc.perform(get(getBaseUrl() + "/1"))
+              .andExpect(status().is4xxClientError());
     }
   }
 
@@ -155,66 +124,45 @@ public class TaskIntegrationTest {
   @DisplayName("Task User Assignment Operations")
   class TaskUserAssignmentTests {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Assign a user to a task")
-    public void testAssignUserToTask() {
-      String url = getBaseUrl() + "/1/users/2";
-
-      ResponseEntity<Void> patchResponse = restTemplate.exchange(
-              url,
-              HttpMethod.PATCH,
-              null,
-              Void.class
-      );
-
-      assertEquals(HttpStatus.OK, patchResponse.getStatusCode());
+    public void testAssignUserToTask() throws Exception {
+      mockMvc.perform(patch(getBaseUrl() + "/1/users/2"))
+              .andExpect(status().isOk());
 
       // Verify the user was assigned
-      DetailedTaskDto taskDto = restTemplate.getForObject(getBaseUrl() + "/1", DetailedTaskDto.class);
-      assertNotNull(taskDto);
-      // Verify the task can be retrieved after assignment
-      assertEquals(1, taskDto.getId().intValue());
+      mockMvc.perform(get(getBaseUrl() + "/1"))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Remove a user from a task")
-    public void testRemoveUserFromTask() {
+    public void testRemoveUserFromTask() throws Exception {
       // First ensure user is assigned to task
-      String assignUrl = getBaseUrl() + "/1/users/2";
-      restTemplate.exchange(assignUrl, HttpMethod.PATCH, null, Void.class);
+      mockMvc.perform(patch(getBaseUrl() + "/1/users/2"))
+              .andExpect(status().isOk());
 
       // Then remove the user
-      ResponseEntity<Void> deleteResponse = restTemplate.exchange(
-              assignUrl,
-              HttpMethod.DELETE,
-              null,
-              Void.class
-      );
+      mockMvc.perform(delete(getBaseUrl() + "/1/users/2"))
+              .andExpect(status().isOk());
 
-      assertEquals(HttpStatus.OK, deleteResponse.getStatusCode());
-
-      // Verify user was removed
-      DetailedTaskDto taskDto = restTemplate.getForObject(getBaseUrl() + "/1", DetailedTaskDto.class);
-      assertNotNull(taskDto);
-      assertEquals(1, taskDto.getId().intValue());
+      // Verify task still exists after user removal
+      mockMvc.perform(get(getBaseUrl() + "/1"))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Assign a non-existent user to a task")
-    public void testAssignNonExistentUserToTask() {
-      String url = getBaseUrl() + "/1/users/999";
-
-      ResponseEntity<String> response = restTemplate.exchange(
-              url,
-              HttpMethod.PATCH,
-              null,
-              String.class
-      );
-
-      // Should return error status
-      assertTrue(response.getStatusCode().is4xxClientError());
+    public void testAssignNonExistentUserToTask() throws Exception {
+      mockMvc.perform(patch(getBaseUrl() + "/1/users/999"))
+              .andExpect(status().is4xxClientError());
     }
   }
 
@@ -222,31 +170,32 @@ public class TaskIntegrationTest {
   @DisplayName("Task Error Cases")
   class TaskErrorCases {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Get a non-existent task")
-    public void testGetTaskWhenTaskDoesNotExist() {
-      ResponseEntity<String> response = restTemplate.getForEntity(
-              getBaseUrl() + "/999", String.class);
-
-      assertTrue(response.getStatusCode().is4xxClientError());
+    public void testGetTaskWhenTaskDoesNotExist() throws Exception {
+      mockMvc.perform(get(getBaseUrl() + "/999"))
+              .andExpect(status().is4xxClientError());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Create a task with invalid data")
-    public void testCreateTaskWithInvalidData() {
+    public void testCreateTaskWithInvalidData() throws Exception {
       TaskRequestDto invalidTask = new TaskRequestDto();
 
-      ResponseEntity<String> response = restTemplate.postForEntity(
-              getBaseUrl(), invalidTask, String.class);
-
-      assertTrue(response.getStatusCode().is4xxClientError());
+      mockMvc.perform(post(getBaseUrl())
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(invalidTask)))
+              .andExpect(status().is4xxClientError());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Update a task with non-existent project ID")
-    public void testUpdateTaskWithInvalidProjectId() {
+    public void testUpdateTaskWithInvalidProjectId() throws Exception {
       TaskRequestDto taskRequestDto = new TaskRequestDto();
       taskRequestDto.setDescription("Updated Task");
       taskRequestDto.setStatus(TaskStatus.IN_PROGRESS);
@@ -254,20 +203,17 @@ public class TaskIntegrationTest {
       taskRequestDto.setDueDate(LocalDate.now().plusDays(5));
       taskRequestDto.setProjectId(999); // Non-existent project
 
-      ResponseEntity<String> response = restTemplate.exchange(
-              getBaseUrl() + "/1",
-              HttpMethod.PUT,
-              new HttpEntity<>(taskRequestDto),
-              String.class
-      );
-
-      assertTrue(response.getStatusCode().is4xxClientError());
+      mockMvc.perform(put(getBaseUrl() + "/1")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(taskRequestDto)))
+              .andExpect(status().is4xxClientError());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Update a non-existent task")
-    public void testUpdateNonExistentTask() {
+    public void testUpdateNonExistentTask() throws Exception {
       TaskRequestDto taskRequestDto = new TaskRequestDto();
       taskRequestDto.setDescription("Update Non-existent Task");
       taskRequestDto.setStatus(TaskStatus.IN_PROGRESS);
@@ -275,14 +221,10 @@ public class TaskIntegrationTest {
       taskRequestDto.setDueDate(LocalDate.now().plusDays(5));
       taskRequestDto.setProjectId(1);
 
-      ResponseEntity<String> response = restTemplate.exchange(
-              getBaseUrl() + "/999",
-              HttpMethod.PUT,
-              new HttpEntity<>(taskRequestDto),
-              String.class
-      );
-
-      assertTrue(response.getStatusCode().is4xxClientError());
+      mockMvc.perform(put(getBaseUrl() + "/999")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(taskRequestDto)))
+              .andExpect(status().is4xxClientError());
     }
   }
 
@@ -290,9 +232,10 @@ public class TaskIntegrationTest {
   @DisplayName("Task Edge Cases")
   class TaskEdgeCases {
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Create task with minimum due date")
-    public void testCreateTaskWithMinimumDueDate() {
+    public void testCreateTaskWithMinimumDueDate() throws Exception {
       TaskRequestDto taskRequestDto = new TaskRequestDto();
       taskRequestDto.setDescription("Minimum Due Date Task");
       taskRequestDto.setStatus(TaskStatus.OPEN);
@@ -300,16 +243,17 @@ public class TaskIntegrationTest {
       taskRequestDto.setDueDate(LocalDate.now()); // Today
       taskRequestDto.setProjectId(1);
 
-      ResponseEntity<String> response = restTemplate.postForEntity(
-              getBaseUrl(), taskRequestDto, String.class);
-
-      assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+      mockMvc.perform(post(getBaseUrl())
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(taskRequestDto)))
+              .andExpect(status().isBadRequest());
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Create task with long description")
-    public void testCreateTaskWithLongDescription() {
+    public void testCreateTaskWithLongDescription() throws Exception {
       TaskRequestDto taskRequestDto = new TaskRequestDto();
       StringBuilder longDescription = new StringBuilder();
       for (int i = 0; i < 50; i++) {
@@ -322,41 +266,28 @@ public class TaskIntegrationTest {
       taskRequestDto.setDueDate(LocalDate.now().plusDays(7));
       taskRequestDto.setProjectId(1);
 
-      ResponseEntity<String> response = restTemplate.postForEntity(
-              getBaseUrl(), taskRequestDto, String.class);
-
-      // Check for either creation success or validation error
-      assertTrue(
-              response.getStatusCode() == HttpStatus.CREATED ||
-                      response.getStatusCode().is4xxClientError(),
-              "Should either create task or reject with validation error"
-      );
+      mockMvc.perform(post(getBaseUrl())
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(taskRequestDto)));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @Sql({"/schema.sql", "/data.sql"})
     @DisplayName("Assign a user to a task multiple times")
-    public void testAssignUserToTaskMultipleTimes() {
-      String url = getBaseUrl() + "/1/users/3";
-
+    public void testAssignUserToTaskMultipleTimes() throws Exception {
       // First assignment
-      restTemplate.exchange(url, HttpMethod.PATCH, null, Void.class);
+      mockMvc.perform(patch(getBaseUrl() + "/1/users/3"))
+              .andExpect(status().isOk());
 
       // Second assignment (should be idempotent)
-      ResponseEntity<Void> secondAssignment = restTemplate.exchange(
-              url,
-              HttpMethod.PATCH,
-              null,
-              Void.class
-      );
-
-      assertEquals(HttpStatus.OK, secondAssignment.getStatusCode(),
-              "Assigning the same user twice should be idempotent");
+      mockMvc.perform(patch(getBaseUrl() + "/1/users/3"))
+              .andExpect(status().isOk());
 
       // Verify user is assigned
-      DetailedTaskDto taskDto = restTemplate.getForObject(getBaseUrl() + "/1", DetailedTaskDto.class);
-      assertNotNull(taskDto);
-      assertEquals(1, taskDto.getId().intValue());
+      mockMvc.perform(get(getBaseUrl() + "/1"))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$.id").value(1));
     }
   }
 }

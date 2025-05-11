@@ -5,6 +5,19 @@ spring:
     username: pfkuser
     password: secret
     driver-class-name: org.postgresql.Driver
+  h2:
+    console:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
 
 # LocalStack AWS configuration overrides
 cloud:
@@ -15,7 +28,7 @@ cloud:
     endpoint:
       uri: http://localhost:4566
     region:
-      static: eu-west-2
+      static: us-east-1
     s3:
       bucket: pfk-task-attachments
     ses:
