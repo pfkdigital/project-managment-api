@@ -49,7 +49,7 @@ pfk-project-management/
 
 ## 🔧 Installation & Setup
 ### Prerequisites
-- Java 17+
+- Java 23+
 - PostgreSQL
 - Redis (for caching)
 - Docker (if running inside a container)
@@ -77,16 +77,37 @@ mvn spring-boot:run
 ```
 
 ### Step 4: API Endpoints
-- **User Authentication**
-  - `POST /api/auth/register` - Register a new user
-  - `POST /api/auth/login` - Authenticate user and receive JWT
-- **Project Management**
-  - `GET /api/projects` - Get all projects
-  - `POST /api/projects` - Create a new project
-  - `GET /api/projects/{id}` - Get project by ID
-- **Task Management**
-  - `POST /api/projects/{id}/tasks` - Add a task to a project
-- **Notifications**
+### Projects
+- `POST /api/v1/projects` - Create a new project
+- `GET /api/v1/projects` - Get all projects
+- `GET /api/v1/projects/{projectId}` - Get project details by ID
+- `PUT /api/v1/projects/{projectId}` - Update project details
+- `DELETE /api/v1/projects/{projectId}` - Delete a project
+- `PATCH /api/v1/projects/{projectId}/collaborators/{userId}` - Add a collaborator to project
+- `DELETE /api/v1/projects/{projectId}/collaborators/{userId}` - Remove a collaborator from project
+
+### Tasks
+- `POST /api/v1/tasks` - Create a new task
+- `GET /api/v1/tasks` - Get all tasks
+- `GET /api/v1/tasks/{taskId}` - Get task details by ID
+- `PUT /api/v1/tasks/{taskId}` - Update task details
+- `DELETE /api/v1/tasks/{taskId}` - Delete a task
+- `PATCH /api/v1/tasks/{taskId}/users/{userId}` - Assign user to task
+- `DELETE /api/v1/tasks/{taskId}/users/{userId}` - Remove user from task
+
+### Issues
+- `POST /api/v1/issues` - Create a new issue
+- `GET /api/v1/issues` - Get all issues
+- `GET /api/v1/issues/{issueId}` - Get issue details by ID
+- `PUT /api/v1/issues/{issueId}` - Update issue details
+- `DELETE /api/v1/issues/{issueId}` - Delete an issue
+
+### Attachments
+- `POST /api/v1/attachments/task/{taskId}` - Upload attachment for a task
+- `POST /api/v1/attachments/issue/{issueId}` - Upload attachment for an issue
+- `DELETE /api/v1/attachments/{attachmentId}` - Delete an attachment
+
+### Notifications
   - `GET /api/notifications` - Fetch user notifications
   
 ## 🚀 Deployment

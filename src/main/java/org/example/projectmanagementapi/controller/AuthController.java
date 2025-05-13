@@ -2,13 +2,14 @@ package org.example.projectmanagementapi.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.example.projectmanagementapi.annotation.RateLimitedRestController;
 import org.example.projectmanagementapi.dto.request.*;
 import org.example.projectmanagementapi.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+@RateLimitedRestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {

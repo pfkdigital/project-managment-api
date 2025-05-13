@@ -2,6 +2,7 @@ package org.example.projectmanagementapi.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.projectmanagementapi.annotation.RateLimitedRestController;
 import org.example.projectmanagementapi.dto.request.CommentRequestDto;
 import org.example.projectmanagementapi.dto.request.CommentUpdateRequest;
 import org.example.projectmanagementapi.dto.response.CommentDto;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController
+@RateLimitedRestController
 @RequestMapping("/api/v1/comments")
 @RequiredArgsConstructor
 public class CommentController {

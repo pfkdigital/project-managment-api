@@ -17,6 +17,16 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+  @ExceptionHandler(RateLimitationException.class)
+  public ResponseEntity<Object> handleRateLimitationException(){
+    ApiError apiError = new ApiError();
+    apiError.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+    apiError.setMessage(HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase());
+    apiError.setTimestamp(LocalDateTime.now());
+
+    return new ResponseEntity<>(apiError, HttpStatus.TOO_MANY_REQUESTS);
+  }
+
   @ExceptionHandler(RuntimeException.class)
   public ResponseEntity<?> handleRuntimeException(RuntimeException ex) {
     ApiError apiError =

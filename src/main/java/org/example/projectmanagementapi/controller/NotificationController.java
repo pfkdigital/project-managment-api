@@ -1,6 +1,7 @@
 package org.example.projectmanagementapi.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.projectmanagementapi.annotation.RateLimitedRestController;
 import org.example.projectmanagementapi.dto.response.NotificationDto;
 import org.example.projectmanagementapi.service.NotificationService;
 import org.springframework.http.ResponseEntity;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@RestController
+@RateLimitedRestController
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
 public class NotificationController {

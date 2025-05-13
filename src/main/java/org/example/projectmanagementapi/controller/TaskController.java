@@ -2,6 +2,7 @@ package org.example.projectmanagementapi.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.projectmanagementapi.annotation.RateLimitedRestController;
 import org.example.projectmanagementapi.dto.request.TaskRequestDto;
 import org.example.projectmanagementapi.dto.response.DetailedTaskDto;
 import org.example.projectmanagementapi.dto.response.TaskDto;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController
+@RateLimitedRestController
 @RequestMapping("/api/v1/tasks")
 @RequiredArgsConstructor
 public class TaskController {

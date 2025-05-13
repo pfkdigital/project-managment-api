@@ -2,6 +2,7 @@ package org.example.projectmanagementapi.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.projectmanagementapi.annotation.RateLimitedRestController;
 import org.example.projectmanagementapi.dto.request.ProjectRequestDto;
 import org.example.projectmanagementapi.dto.response.DetailedProjectDto;
 import org.example.projectmanagementapi.dto.response.ProjectWithCollaboratorsDto;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController
+@RateLimitedRestController
 @RequestMapping("/api/v1/projects")
 @RequiredArgsConstructor
 public class ProjectController {

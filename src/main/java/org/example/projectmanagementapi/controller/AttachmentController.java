@@ -1,6 +1,8 @@
 package org.example.projectmanagementapi.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.projectmanagementapi.annotation.RateLimitedRestController;
+import org.example.projectmanagementapi.annotation.WithRateLimitProtection;
 import org.example.projectmanagementapi.dto.response.AttachmentDto;
 import org.example.projectmanagementapi.service.AttachmentService;
 import org.springframework.http.HttpStatus;
@@ -8,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-@RestController
+@RateLimitedRestController
 @RequestMapping("/api/v1/attachments")
 @RequiredArgsConstructor
 public class AttachmentController {

@@ -40,3 +40,7 @@ security:
     refresh:
       expiration:
         time: 259200000
+app:
+  rate:
+    limit: 200
+    duration: 6000
